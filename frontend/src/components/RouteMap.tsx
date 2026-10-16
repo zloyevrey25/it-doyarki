@@ -1,9 +1,9 @@
 import L, { type CircleMarker, type Map as LeafletMap, type Polyline } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './route-map.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { DEFAULT_FARM_COORDINATES, DEMO_BUYERS, ROUTE_COLORS } from '../data/catalog'
+import { ROUTE_COLORS } from '../data/catalog'
 
 interface Props {
   selectedBuyerIds: string[]
@@ -18,8 +18,6 @@ interface RouteLayer {
   isRoadRoute: boolean
 }
 
-const DEFAULT_FARM_LOCATION = 'село Большие Кабаны, Республика Татарстан'
-
 function textBlock(title: string, detail: string) {
   const wrapper = document.createElement('div')
   const heading = document.createElement('strong')
@@ -29,22 +27,6 @@ function textBlock(title: string, detail: string) {
   wrapper.className = 'real-map-label'
   wrapper.append(heading, description)
   return wrapper
-}
-
-async function geocodeLocation(query: string, signal: AbortSignal): Promise<[number, number] | null> {
-  if (query.trim().toLocaleLowerCase('ru-RU') === DEFAULT_FARM_LOCATION.toLocaleLowerCase('ru-RU')) {
-    return DEFAULT_FARM_COORDINATES
-  }
-
-  const params = new URLSearchParams({ format: 'jsonv2', limit: '1', countrycodes: 'ru', q: query })
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-    headers: { Accept: 'application/json' },
-    signal,
-  })
-  if (!response.ok) throw new Error('Не удалось определить адрес фермы')
-  const results = await response.json() as Array<{ lat: string; lon: string }>
-  if (!results.length) return null
-  return [Number(results[0].lat), Number(results[0].lon)]
 }
 
 async function loadRoadRoute(from: [number, number], to: [number, number], signal: AbortSignal) {
@@ -61,7 +43,7 @@ async function loadRoadRoute(from: [number, number], to: [number, number], signa
 }
 
 export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, compact = false }: Props) {
-  const { farmLocation } = useApp()
+  const { farmLocation, farmCoordinates, buyers } = useApp()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<LeafletMap | null>(null)
   const routeLayersRef = useRef(new Map<string, RouteLayer>())
@@ -70,14 +52,13 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
   const toggleBuyerRef = useRef(onToggleBuyer)
   const selectedRef = useRef(selectedBuyerIds)
   const activeRef = useRef(activeBuyerIds)
-  const [mapNotice, setMapNotice] = useState('Строим маршруты по дорогам…')
-
   const activeKey = activeBuyerIds?.join('|') ?? ''
   const visibleBuyers = useMemo(
-    () => activeBuyerIds ? DEMO_BUYERS.filter((buyer) => activeBuyerIds.includes(buyer.id)) : DEMO_BUYERS,
-    [activeKey],
+    () => activeBuyerIds ? buyers.filter((buyer) => activeBuyerIds.includes(buyer.id)) : buyers,
+    [buyers, activeKey],
   )
-  const visibleKey = visibleBuyers.map((buyer) => buyer.id).join('|')
+  const visibleKey = visibleBuyers.map((buyer) => `${buyer.id}:${buyer.coordinates.join(',')}`).join('|')
+  const farmKey = farmCoordinates.join(',')
 
   useEffect(() => { toggleBuyerRef.current = onToggleBuyer }, [onToggleBuyer])
   useEffect(() => { selectedRef.current = selectedBuyerIds }, [selectedBuyerIds])
@@ -88,10 +69,10 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
     const initialBuyer = compact && visibleBuyers.length === 1 ? visibleBuyers[0] : null
     const initialCenter: [number, number] = initialBuyer
       ? [
-          (DEFAULT_FARM_COORDINATES[0] + initialBuyer.coordinates[0]) / 2,
-          (DEFAULT_FARM_COORDINATES[1] + initialBuyer.coordinates[1]) / 2,
+          (farmCoordinates[0] + initialBuyer.coordinates[0]) / 2,
+          (farmCoordinates[1] + initialBuyer.coordinates[1]) / 2,
         ]
-      : DEFAULT_FARM_COORDINATES
+      : farmCoordinates
     const map = L.map(containerRef.current, { zoomControl: true, minZoom: 4 }).setView(initialCenter, initialBuyer ? 10 : 7)
     map.attributionControl.setPrefix(false)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -117,20 +98,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
     pointLayersRef.current.forEach((layer) => layer.remove())
     pointLayersRef.current = []
     buyerMarkersRef.current.clear()
-    setMapNotice('Строим маршруты по дорогам…')
-
     const drawMap = async () => {
-      let farmCoordinates = DEFAULT_FARM_COORDINATES
-      let usedFallbackLocation = false
-      try {
-        farmCoordinates = await geocodeLocation(farmLocation, controller.signal) ?? DEFAULT_FARM_COORDINATES
-        usedFallbackLocation = farmCoordinates === DEFAULT_FARM_COORDINATES && farmLocation.trim().toLocaleLowerCase('ru-RU') !== DEFAULT_FARM_LOCATION.toLocaleLowerCase('ru-RU')
-      } catch (error) {
-        if (controller.signal.aborted) return
-        usedFallbackLocation = true
-      }
-      if (cancelled) return
-
       const farmMarker = L.circleMarker(farmCoordinates, {
         radius: 10, color: '#08663f', weight: 4, fillColor: '#ffffff', fillOpacity: 1,
       }).addTo(map)
@@ -175,7 +143,6 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
         }
       }, 80)
 
-      let failedRoutes = 0
       await Promise.all(visibleBuyers.map(async (buyer, index) => {
         try {
           const roadCoordinates = await loadRoadRoute(farmCoordinates, buyer.coordinates, controller.signal)
@@ -189,14 +156,10 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
           route.bindTooltip(`${buyer.name}: ${buyer.distanceKm} км`)
           if (toggleBuyerRef.current) route.on('click', () => toggleBuyerRef.current?.(buyer.id))
           routeLayersRef.current.set(buyer.id, { layer: route, color, isRoadRoute: true })
-        } catch (error) {
-          if (!controller.signal.aborted) failedRoutes += 1
+        } catch {
+          // Пунктирная линия остаётся безопасным резервом при недоступности OSRM.
         }
       }))
-      if (cancelled) return
-      if (usedFallbackLocation) setMapNotice('Адрес фермы не найден: показана резервная точка')
-      else if (failedRoutes) setMapNotice('Часть путей показана резервными линиями')
-      else setMapNotice('Маршруты построены по дорожной сети')
     }
 
     void drawMap()
@@ -205,7 +168,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
       controller.abort()
       if (fitTimer !== undefined) window.clearTimeout(fitTimer)
     }
-  }, [farmLocation, visibleKey, compact])
+  }, [farmLocation, farmKey, visibleKey, compact])
 
   useEffect(() => {
     routeLayersRef.current.forEach(({ layer, color, isRoadRoute }, buyerId) => {
@@ -226,7 +189,6 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
   return (
     <div className={`route-map real-route-map ${compact ? 'is-compact' : ''}`} aria-label="Интерактивная карта маршрутов доставки OpenStreetMap">
       <div ref={containerRef} className="leaflet-host" />
-      <div className="map-caption"><span>Карта маршрутов</span><small>{mapNotice}</small></div>
       <div className="map-legend"><span><i className="legend-line selected" />Выбранный путь</span><span><i className="legend-line" />Доступный путь</span></div>
     </div>
   )

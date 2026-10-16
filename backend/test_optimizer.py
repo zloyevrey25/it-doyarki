@@ -25,7 +25,8 @@ class OptimizerTest(unittest.TestCase):
             self.assertGreaterEqual(quantity, 0)
             self.assertLessEqual(
                 data["delivery_time"][row["vehicle"]][row["buyer"]],
-                data["max_delivery_time"][row["product"]],
+                data["max_delivery_time"][row["product"]]
+                + data["vehicles"][row["vehicle"]].get("refrigeration_hours", 0),
             )
             by_product[row["product"]] += quantity
             by_product_buyer[(row["product"], row["buyer"])] += quantity
@@ -160,6 +161,20 @@ class OptimizerTest(unittest.TestCase):
 
         self.assertAlmostEqual(totals[("cucumber", "buyer")], 1)
         self.assertAlmostEqual(result["leftovers"]["cucumber"], 0)
+
+    def test_refrigerated_vehicle_extends_delivery_window(self):
+        data = self.delivery_time_scenario()
+        data["vehicles"]["truck"]["refrigeration_hours"] = 8
+        data["delivery_time"]["truck"]["buyer"] = 9
+
+        result = optimize_shipments(data)
+        totals = self.product_buyer_totals(result)
+        strawberry = next(
+            row for row in result["shipments"] if row["product"] == "strawberry"
+        )
+
+        self.assertAlmostEqual(totals[("strawberry", "buyer")], 1)
+        self.assertAlmostEqual(strawberry["delivery_time_margin"], 1)
 
     def test_small_scenario_has_known_optimum(self):
         data = {

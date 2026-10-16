@@ -4,11 +4,12 @@ import { ProductMascot } from '../components/ProductMascot'
 import { TruckIllustration } from '../components/TruckIllustration'
 import { useApp } from '../context/AppContext'
 import { buildOptimizeRequest } from '../data/catalog'
+import { createNearbyBuyers, geocodeFarmLocation } from '../data/nearbyBuyers'
 import type { Product } from '../types'
 import '../input-step.css'
 
 export function InputStep() {
-  const { farmLocation, setFarmLocation, products, setProducts, vehicles, setVehicles, setOptimization, setComparison, setStep, setStatus, setError } = useApp()
+  const { farmLocation, setFarmLocation, setFarmCoordinates, setBuyers, products, setProducts, vehicles, setVehicles, setOptimization, setComparison, setSelectedBuyers, setStep, setStatus, setError } = useApp()
   const [activeCategory, setActiveCategory] = useState<'Фрукты' | 'Овощи'>('Фрукты')
 
   const visibleProducts = products.filter((product) => product.category === activeCategory)
@@ -32,7 +33,13 @@ export function InputStep() {
     if (Object.keys(errors).length) return
     setStatus('loading'); setError(''); setComparison(null)
     try {
-      const result = await apiClient.optimize(buildOptimizeRequest(products, vehicles, farmLocation))
+      const coordinates = await geocodeFarmLocation(farmLocation)
+      const nearbyBuyers = createNearbyBuyers(coordinates)
+      if (nearbyBuyers.length < 3) throw new Error('В радиусе 700 км найдено слишком мало точек доставки. Уточните адрес фермы.')
+      setFarmCoordinates(coordinates)
+      setBuyers(nearbyBuyers)
+      setSelectedBuyers([])
+      const result = await apiClient.optimize(buildOptimizeRequest(products, vehicles, farmLocation, nearbyBuyers))
       setOptimization(result); setStatus(result.shipments.length ? 'success' : 'empty'); setStep(2)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Неизвестная ошибка backend.'); setStatus('error')
@@ -62,7 +69,7 @@ export function InputStep() {
       <section className="panel" aria-labelledby="transport-title">
         <div className="section-title"><div><h2 id="transport-title">Транспорт</h2><p>Недоступные машины не попадут в план</p></div></div>
         {errors.vehicles && <p className="section-error">{errors.vehicles}</p>}
-        <div className="vehicle-grid">{vehicles.map((vehicle) => <article className={`vehicle-card ${vehicle.available ? '' : 'is-disabled'}`} key={vehicle.id}><TruckIllustration color={vehicle.color} muted={!vehicle.available} /><div className="vehicle-main"><strong className="plate-number">{vehicle.plateNumber}</strong><b>{vehicle.model}</b><small>Грузоподъёмность: {vehicle.capacityKg.toLocaleString('ru-RU')} кг</small></div><label className="switch"><input type="checkbox" checked={vehicle.available} onChange={(e) => setVehicles((items) => items.map((item) => item.id === vehicle.id ? { ...item, available: e.target.checked } : item))} aria-label={`${vehicle.available ? 'Сделать недоступной' : 'Сделать доступной'} машину ${vehicle.plateNumber}`} /><span /><b>{vehicle.available ? 'Доступна' : 'Недоступна'}</b></label></article>)}</div>
+        <div className="vehicle-grid">{vehicles.map((vehicle) => <article className={`vehicle-card ${vehicle.available ? '' : 'is-disabled'}`} key={vehicle.id}><TruckIllustration color={vehicle.color} muted={!vehicle.available} /><div className="vehicle-main"><strong className="plate-number">{vehicle.plateNumber}</strong><b>{vehicle.model}</b><small>Грузоподъёмность: {vehicle.capacityKg.toLocaleString('ru-RU')} кг</small>{vehicle.refrigerationHours > 0 && <span className="refrigeration-note"><b>❄ Холодильник</b><small>В модели: +{vehicle.refrigerationHours} ч к допустимому времени доставки</small></span>}</div><label className="switch"><input type="checkbox" checked={vehicle.available} onChange={(e) => setVehicles((items) => items.map((item) => item.id === vehicle.id ? { ...item, available: e.target.checked } : item))} aria-label={`${vehicle.available ? 'Сделать недоступной' : 'Сделать доступной'} машину ${vehicle.plateNumber}`} /><span /><b>{vehicle.available ? 'Доступна' : 'Недоступна'}</b></label></article>)}</div>
       </section>
 
       <div className="page-action"><span>{Object.keys(errors).length ? 'Заполните обязательные поля' : 'Данные готовы к расчёту'}</span><button className="button button-primary button-large" disabled={Boolean(Object.keys(errors).length)} onClick={submit}>Найти покупателей и маршруты <span>→</span></button></div>

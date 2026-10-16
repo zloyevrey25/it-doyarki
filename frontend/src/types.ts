@@ -20,6 +20,7 @@ export interface Vehicle {
   fixedCost: number
   available: boolean
   color: string
+  refrigerationHours: number
 }
 
 export interface BuyerDemand {
@@ -133,6 +134,7 @@ export interface OptimizeRequest {
     available: boolean
     model: string
     plate_number: string
+    refrigeration_hours: number
   }>
   max_delivery_time: Record<string, number>
   delivery_time: Record<string, Record<string, number>>

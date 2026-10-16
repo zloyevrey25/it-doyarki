@@ -3,8 +3,8 @@ import { ProductMascot } from '../components/ProductMascot'
 import { EmptyState, ErrorState, LoadingState } from '../components/RequestState'
 import { RouteMap } from '../components/RouteMap'
 import { useApp } from '../context/AppContext'
-import { buildOptimizeRequest, DEMO_BUYERS } from '../data/catalog'
-import type { ComparisonSolution, Product, Vehicle } from '../types'
+import { buildOptimizeRequest } from '../data/catalog'
+import type { Buyer, ComparisonSolution, Product, Vehicle } from '../types'
 import { money, number, riskLabel } from '../utils'
 import './comparison-step.css'
 
@@ -13,9 +13,10 @@ interface AlternativePlanProps {
   bestProfit: number
   products: Product[]
   vehicles: Vehicle[]
+  buyers: Buyer[]
 }
 
-function AlternativePlan({ solution, bestProfit, products, vehicles }: AlternativePlanProps) {
+function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: AlternativePlanProps) {
   const profitDifference = bestProfit - solution.profit
 
   return (
@@ -43,7 +44,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles }: Alternati
               const vehicle = vehicles.find((item) => item.id === route.vehicle)
               return (
                 <div className="alternative-route-line" key={`${route.vehicle}-${route.buyer}`}>
-                  <span><b>{route.buyer_name}</b><small>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч</small></span>
+                  <span><b>{route.buyer_name}</b><small>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч{vehicle?.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</small></span>
                   <span>{number.format(route.shipped_kg)} кг</span>
                   <strong>{money.format(route.route_profit)}</strong>
                 </div>
@@ -54,7 +55,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles }: Alternati
             <h3>Отгрузки</h3>
             {solution.shipments.map((shipment) => {
               const product = products.find((item) => item.id === shipment.product)
-              const buyer = DEMO_BUYERS.find((item) => item.id === shipment.buyer)
+              const buyer = buyers.find((item) => item.id === shipment.buyer)
               return (
                 <div className="alternative-shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>
                   <span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name ?? shipment.buyer}</small></span>
@@ -70,13 +71,13 @@ function AlternativePlan({ solution, bestProfit, products, vehicles }: Alternati
 }
 
 export function ComparisonStep() {
-  const { products, vehicles, farmLocation, selectedBuyers, comparison, setComparison, status, setStatus, error, setError } = useApp()
+  const { products, vehicles, farmLocation, buyers, selectedBuyers, comparison, setComparison, status, setStatus, error, setError } = useApp()
 
   const retry = async () => {
     setStatus('loading')
     setError('')
     try {
-      const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation), selectedBuyers, 3)
+      const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, buyers), selectedBuyers, 3)
       setComparison(result)
       setStatus(result.solutions.length ? 'success' : 'empty')
     } catch (requestError) {
@@ -104,14 +105,14 @@ export function ComparisonStep() {
       <section className="frozen-summary compact-summary panel" aria-label="Зафиксированные исходные данные">
         <div className="summary-location"><span>Ферма</span><b>{farmLocation}</b></div>
         <div className="summary-group"><span>Урожай</span><div className="summary-chip-list">{selectedProducts.map((product) => <b key={product.id}>{product.name} · {number.format(product.quantityKg)} кг</b>)}</div></div>
-        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг</b>)}</div></div>
+        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
       </section>
 
       <section className="comparison-section compact-comparison">
         <div className="section-title compact-section-title"><div><h2>Выбранные направления</h2><p>Короткое сравнение до выбора оптимальной комбинации</p></div></div>
         <div className="route-columns compact-route-columns">
           {selectedBuyers.map((buyerId) => {
-            const buyer = DEMO_BUYERS.find((item) => item.id === buyerId)
+            const buyer = buyers.find((item) => item.id === buyerId)
             if (!buyer) return null
             const route = comparison.solutions.flatMap((solution) => solution.route_metrics).find((item) => item.buyer === buyerId)
             const shipments = comparison.solutions.flatMap((solution) => solution.shipments).filter((item) => item.buyer === buyerId)
@@ -129,7 +130,7 @@ export function ComparisonStep() {
                   <span><small>Прибыль</small><b className="positive">{money.format(route?.route_profit ?? 0)}</b></span>
                   <span><small>Риск</small><b className={`risk risk-${worstRisk}`}>{route ? riskLabel(worstRisk) : '—'}</b></span>
                 </div>
-                <footer><span>{vehicle ? `${vehicle.plateNumber} · ${vehicle.model}` : 'Машина не назначена'}</span><b>Запас времени: {margin === null ? '—' : `${number.format(margin)} ч`}</b></footer>
+                <footer><span>{vehicle ? `${vehicle.plateNumber} · ${vehicle.model}${vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}` : 'Машина не назначена'}</span><b>Запас времени: {margin === null ? '—' : `${number.format(margin)} ч`}</b></footer>
               </article>
             )
           })}
@@ -149,7 +150,7 @@ export function ComparisonStep() {
         </div>
         <div className="optimal-grid">
           <div><h3>Маршруты и отгрузки</h3>{best.route_metrics.map((route) => <article className="optimal-route" key={`${route.vehicle}-${route.buyer}`}><div><b>{route.buyer_name}</b><small>{route.city} · {route.distance_km} км · {route.delivery_time} ч</small></div><span>{number.format(route.shipped_kg)} кг</span><strong>{money.format(route.route_profit)}</strong></article>)}</div>
-          <div><h3>Что отправляем</h3>{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = DEMO_BUYERS.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>{product && <ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} size={28}/>}<span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
+          <div><h3>Что отправляем</h3>{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>{product && <ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} size={28}/>}<span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
           <div><h3>Остатки</h3>{Object.entries(best.leftovers).map(([productId, value]) => <div className="leftover-line" key={productId}><span>{products.find((item) => item.id === productId)?.name ?? productId}</span><strong>{number.format(value)} кг</strong></div>)}</div>
         </div>
         <div className="constraint-list"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Доступность машин</span><span>✓ Сроки доставки</span></div>
@@ -159,7 +160,7 @@ export function ComparisonStep() {
         <section className="alternatives panel compact-alternatives">
           <div className="section-title compact-section-title"><div><h2>Другие допустимые планы</h2><p>Нажмите на решение, чтобы увидеть маршруты, отгрузки и показатели</p></div></div>
           <div className="alternative-list">
-            {comparison.solutions.slice(1).map((solution) => <AlternativePlan key={solution.rank} solution={solution} bestProfit={best.profit} products={products} vehicles={vehicles} />)}
+            {comparison.solutions.slice(1).map((solution) => <AlternativePlan key={solution.rank} solution={solution} bestProfit={best.profit} products={products} vehicles={vehicles} buyers={buyers} />)}
           </div>
         </section>
       )}

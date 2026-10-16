@@ -13,6 +13,7 @@ class VehicleInput(BaseModel):
     available: bool
     model: str = ""
     plate_number: str = ""
+    refrigeration_hours: float = Field(default=0, ge=0, allow_inf_nan=False)
 
 
 class BuyerInfoInput(BaseModel):

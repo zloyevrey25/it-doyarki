@@ -16,18 +16,6 @@
   font-family: inherit;
 }
 
-.real-route-map .map-caption {
-  z-index: 1000;
-  max-width: min(310px, calc(100% - 90px));
-  pointer-events: none;
-  box-shadow: 0 7px 22px rgba(22, 52, 34, .14);
-}
-
-.real-route-map .map-caption small {
-  font-size: 10px;
-  line-height: 1.35;
-}
-
 .real-route-map .map-legend {
   z-index: 1000;
   box-shadow: 0 7px 22px rgba(22, 52, 34, .12);
@@ -91,11 +79,6 @@
 }
 
 @media (max-width: 760px) {
-  .real-route-map .map-caption {
-    top: 10px;
-    left: 54px;
-  }
-
   .real-route-map .map-legend {
     right: 8px;
     bottom: 24px;

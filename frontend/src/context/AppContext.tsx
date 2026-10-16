@@ -1,12 +1,17 @@
 import { createContext, useContext, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { DEFAULT_VEHICLES, PRODUCT_CATALOG } from '../data/catalog'
-import type { CompareRoutesResult, OptimizationResult, Product, RequestStatus, Vehicle } from '../types'
+import { DEFAULT_BUYERS } from '../data/nearbyBuyers'
+import type { Buyer, CompareRoutesResult, OptimizationResult, Product, RequestStatus, Vehicle } from '../types'
 
 interface AppContextValue {
   step: 1 | 2 | 3
   setStep: (step: 1 | 2 | 3) => void
   farmLocation: string
   setFarmLocation: (value: string) => void
+  farmCoordinates: [number, number]
+  setFarmCoordinates: (value: [number, number]) => void
+  buyers: Buyer[]
+  setBuyers: (buyers: Buyer[]) => void
   products: Product[]
   setProducts: Dispatch<SetStateAction<Product[]>>
   vehicles: Vehicle[]
@@ -28,6 +33,8 @@ const AppContext = createContext<AppContextValue | null>(null)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [farmLocation, setFarmLocation] = useState('село Большие Кабаны, Республика Татарстан')
+  const [farmCoordinates, setFarmCoordinates] = useState<[number, number]>([55.6493585, 49.3054794])
+  const [buyers, setBuyers] = useState<Buyer[]>(DEFAULT_BUYERS)
   const [products, setProducts] = useState<Product[]>(PRODUCT_CATALOG)
   const [vehicles, setVehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES)
   const [selectedBuyers, setSelectedBuyers] = useState<string[]>([])
@@ -37,10 +44,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('')
 
   const value = useMemo(() => ({
-    step, setStep, farmLocation, setFarmLocation, products, setProducts, vehicles, setVehicles,
+    step, setStep, farmLocation, setFarmLocation, farmCoordinates, setFarmCoordinates, buyers, setBuyers,
+    products, setProducts, vehicles, setVehicles,
     selectedBuyers, setSelectedBuyers, optimization, setOptimization, comparison, setComparison,
     status, setStatus, error, setError,
-  }), [step, farmLocation, products, vehicles, selectedBuyers, optimization, comparison, status, error])
+  }), [step, farmLocation, farmCoordinates, buyers, products, vehicles, selectedBuyers, optimization, comparison, status, error])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

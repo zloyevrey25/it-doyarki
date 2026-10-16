@@ -54,6 +54,12 @@ def _validate_data(data: dict[str, Any]) -> None:
             raise ValueError(f"delivery_cost.{vehicle_id} должен содержать всех покупателей")
         values.append((f"vehicles.{vehicle_id}.capacity", vehicle["capacity"]))
         values.append((f"vehicles.{vehicle_id}.cost", vehicle["cost"]))
+        values.append(
+            (
+                f"vehicles.{vehicle_id}.refrigeration_hours",
+                vehicle.get("refrigeration_hours", 0),
+            )
+        )
         if not isinstance(vehicle["available"], bool):
             raise ValueError(f"vehicles.{vehicle_id}.available должен быть bool")
         for buyer in buyers:
@@ -139,6 +145,7 @@ def _solve_model(
                 if (
                     data["delivery_time"][vehicle_id][buyer]
                     > data["max_delivery_time"][product]
+                    + vehicles[vehicle_id].get("refrigeration_hours", 0)
                 ):
                     model += shipped[product][buyer][vehicle_id] == 0
 
@@ -256,7 +263,10 @@ def _add_result_metrics(data: dict[str, Any], result: dict[str, Any]) -> dict[st
     enriched_shipments = []
     for row in result["shipments"]:
         delivery_time = data["delivery_time"][row["vehicle"]][row["buyer"]]
-        max_time = data["max_delivery_time"][row["product"]]
+        max_time = (
+            data["max_delivery_time"][row["product"]]
+            + data["vehicles"][row["vehicle"]].get("refrigeration_hours", 0)
+        )
         margin = round(max_time - delivery_time, 6)
         enriched_shipments.append(
             {

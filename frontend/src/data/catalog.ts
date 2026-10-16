@@ -12,78 +12,16 @@ export const PRODUCT_CATALOG: Product[] = [
 ]
 
 export const DEFAULT_VEHICLES: Vehicle[] = [
-  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b' },
-  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f' },
-  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438' },
-  { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792' },
+  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b', refrigerationHours: 0 },
+  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f', refrigerationHours: 8 },
+  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438', refrigerationHours: 12 },
+  { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792', refrigerationHours: 0 },
 ]
 
-export const DEMO_BUYERS: Buyer[] = [
-  {
-    id: 'buyer_1', name: 'СеверМаркет', city: 'Казань', address: 'Аграрная улица, 2, Казань', distanceKm: 23, deliveryTime: 0.5, coordinates: [55.7944104, 49.2135053],
-    demands: [
-      { productId: 'strawberry', requestedKg: 350, pricePerKg: 320 },
-      { productId: 'tomato', requestedKg: 300, pricePerKg: 180 },
-      { productId: 'cucumber', requestedKg: 240, pricePerKg: 145 },
-      { productId: 'apple', requestedKg: 300, pricePerKg: 150 },
-      { productId: 'carrot', requestedKg: 220, pricePerKg: 95 },
-      { productId: 'potato', requestedKg: 500, pricePerKg: 80 },
-      { productId: 'cabbage', requestedKg: 260, pricePerKg: 110 },
-      { productId: 'pear', requestedKg: 200, pricePerKg: 170 },
-    ],
-  },
-  {
-    id: 'buyer_2', name: 'АгроСнаб', city: 'Уфа', address: 'Гурьевская улица, 3А, Уфа', distanceKm: 526, deliveryTime: 7.3, coordinates: [54.7136009, 55.9881051],
-    demands: [
-      { productId: 'strawberry', requestedKg: 420, pricePerKg: 280 },
-      { productId: 'tomato', requestedKg: 450, pricePerKg: 170 },
-      { productId: 'cucumber', requestedKg: 350, pricePerKg: 130 },
-      { productId: 'apple', requestedKg: 400, pricePerKg: 145 },
-      { productId: 'carrot', requestedKg: 300, pricePerKg: 90 },
-      { productId: 'potato', requestedKg: 600, pricePerKg: 76 },
-      { productId: 'cabbage', requestedKg: 300, pricePerKg: 105 },
-      { productId: 'pear', requestedKg: 260, pricePerKg: 160 },
-    ],
-  },
-  {
-    id: 'buyer_3', name: 'ВостокФуд', city: 'Самара', address: 'Заводское шоссе, 14А, Самара', distanceKm: 338, deliveryTime: 5.2, coordinates: [53.1976331, 50.2386006],
-    demands: [
-      { productId: 'strawberry', requestedKg: 260, pricePerKg: 420 },
-      { productId: 'tomato', requestedKg: 520, pricePerKg: 160 },
-      { productId: 'cucumber', requestedKg: 300, pricePerKg: 120 },
-      { productId: 'apple', requestedKg: 350, pricePerKg: 180 },
-      { productId: 'carrot', requestedKg: 250, pricePerKg: 110 },
-      { productId: 'potato', requestedKg: 700, pricePerKg: 82 },
-      { productId: 'cabbage', requestedKg: 350, pricePerKg: 115 },
-      { productId: 'pear', requestedKg: 300, pricePerKg: 190 },
-    ],
-  },
-  {
-    id: 'buyer_4', name: 'ВолгаРитейл', city: 'Ульяновск', address: 'Московское шоссе, 9, Ульяновск', distanceKm: 218, deliveryTime: 3.3, coordinates: [54.2987514, 48.2879325],
-    demands: [
-      { productId: 'strawberry', requestedKg: 300, pricePerKg: 350 },
-      { productId: 'tomato', requestedKg: 380, pricePerKg: 175 },
-      { productId: 'cucumber', requestedKg: 280, pricePerKg: 138 },
-      { productId: 'apple', requestedKg: 280, pricePerKg: 160 },
-      { productId: 'carrot', requestedKg: 220, pricePerKg: 100 },
-      { productId: 'potato', requestedKg: 450, pricePerKg: 78 },
-      { productId: 'cabbage', requestedKg: 240, pricePerKg: 108 },
-      { productId: 'pear', requestedKg: 220, pricePerKg: 175 },
-    ],
-  },
-]
-
-const ROUTE_COSTS: Record<string, number[]> = {
-  truck_1: [2400, 4200, 6100, 4900],
-  truck_2: [2700, 4500, 6400, 5200],
-  truck_3: [3200, 5000, 7000, 5700],
-  truck_4: [2200, 4000, 5900, 4700],
-}
-
-export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], farmLocation: string): OptimizeRequest {
+export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], farmLocation: string, buyers: Buyer[]): OptimizeRequest {
   const selectedProducts = products.filter((product) => product.selected)
   const productIds = selectedProducts.map((product) => product.id)
-  const buyerIds = DEMO_BUYERS.map((buyer) => buyer.id)
+  const buyerIds = buyers.map((buyer) => buyer.id)
 
   const stock: Record<string, number> = {}
   const maxDeliveryTime: Record<string, number> = {}
@@ -95,7 +33,7 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
     maxDeliveryTime[product.id] = product.maxDeliveryTime
     demand[product.id] = {}
     prices[product.id] = {}
-    DEMO_BUYERS.forEach((buyer) => {
+    buyers.forEach((buyer) => {
       const item = buyer.demands.find((entry) => entry.productId === product.id)
       demand[product.id][buyer.id] = item?.requestedKg ?? 0
       prices[product.id][buyer.id] = item?.pricePerKg ?? 0
@@ -112,12 +50,13 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
       available: vehicle.available,
       model: vehicle.model,
       plate_number: vehicle.plateNumber,
+      refrigeration_hours: vehicle.refrigerationHours,
     }
     deliveryTime[vehicle.id] = {}
     deliveryCost[vehicle.id] = {}
-    DEMO_BUYERS.forEach((buyer, buyerIndex) => {
+    buyers.forEach((buyer) => {
       deliveryTime[vehicle.id][buyer.id] = Number((buyer.deliveryTime + vehicleIndex * 0.15).toFixed(2))
-      deliveryCost[vehicle.id][buyer.id] = ROUTE_COSTS[vehicle.id]?.[buyerIndex] ?? 3000
+      deliveryCost[vehicle.id][buyer.id] = Math.round(900 + buyer.distanceKm * (7.2 + vehicleIndex * 1.15))
     })
   })
 
@@ -132,7 +71,7 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
     max_delivery_time: maxDeliveryTime,
     delivery_time: deliveryTime,
     delivery_cost: deliveryCost,
-    buyer_info: Object.fromEntries(DEMO_BUYERS.map((buyer) => [buyer.id, {
+    buyer_info: Object.fromEntries(buyers.map((buyer) => [buyer.id, {
       name: buyer.name,
       city: buyer.city,
       distance_km: buyer.distanceKm,

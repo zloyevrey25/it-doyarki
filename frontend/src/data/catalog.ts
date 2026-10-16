@@ -12,10 +12,10 @@ export const PRODUCT_CATALOG: Product[] = [
 ]
 
 export const DEFAULT_VEHICLES: Vehicle[] = [
-  { id: 'truck_1', plateNumber: 'А123ВС 63', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b' },
-  { id: 'truck_2', plateNumber: 'В456МТ 116', model: 'ГАЗон Next', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f' },
-  { id: 'truck_3', plateNumber: 'С789КН 116', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438' },
-  { id: 'truck_4', plateNumber: 'О321РТ 16', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792' },
+  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b' },
+  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f' },
+  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438' },
+  { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792' },
 ]
 
 export const DEMO_BUYERS: Buyer[] = [

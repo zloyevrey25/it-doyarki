@@ -1,0 +1,67 @@
+.category-tabs {
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  gap: 5px;
+  margin: 0 0 16px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #f3f6f3;
+}
+
+.category-tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 750;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+
+.category-tab b {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #e4e9e5;
+  font-size: 11px;
+}
+
+.category-tab.is-active {
+  background: #fff;
+  color: var(--green-dark);
+  box-shadow: 0 3px 10px rgba(28, 57, 38, .08);
+}
+
+.category-tab.is-active b {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.vehicle-card {
+  overflow: hidden;
+}
+
+.vehicle-card:hover:not(.is-disabled) .truck-svg {
+  animation: truck-drive .7s ease-in-out;
+}
+
+@keyframes truck-drive {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  35% { transform: translateX(8px) translateY(-1px); }
+  55% { transform: translateX(10px) translateY(1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vehicle-card:hover:not(.is-disabled) .truck-svg {
+    animation: none;
+  }
+}

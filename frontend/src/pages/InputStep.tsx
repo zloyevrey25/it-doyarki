@@ -5,11 +5,15 @@ import { TruckIllustration } from '../components/TruckIllustration'
 import { useApp } from '../context/AppContext'
 import { buildOptimizeRequest } from '../data/catalog'
 import type { Product } from '../types'
+import '../input-step.css'
 
 export function InputStep() {
   const { farmLocation, setFarmLocation, products, setProducts, vehicles, setVehicles, setOptimization, setComparison, setStep, setStatus, setError } = useApp()
   const [showCustom, setShowCustom] = useState(false)
+  const [activeCategory, setActiveCategory] = useState<'Фрукты' | 'Овощи'>('Фрукты')
   const [custom, setCustom] = useState({ name: '', category: 'Овощи' as Product['category'], quantityKg: 100, maxDeliveryTime: 12 })
+
+  const visibleProducts = products.filter((product) => product.category === activeCategory)
 
   const errors = useMemo(() => {
     const next: Record<string, string> = {}
@@ -35,6 +39,7 @@ export function InputStep() {
       quantityKg: custom.quantityKg, maxDeliveryTime: custom.maxDeliveryTime,
       color: '#8ebd63', accent: '#4b7d3e', mascotShape: 'generic',
     }])
+    setActiveCategory(custom.category as 'Фрукты' | 'Овощи')
     setCustom({ name: '', category: 'Овощи', quantityKg: 100, maxDeliveryTime: 12 })
     setShowCustom(false)
   }
@@ -61,10 +66,13 @@ export function InputStep() {
 
       <section className="panel" aria-labelledby="harvest-title">
         <div className="section-title section-title-row"><div className="title-group"><span className="section-icon">✣</span><div><h2 id="harvest-title">Ваш урожай</h2><p>Выберите продукты и задайте доступный объём</p></div></div><button className="button button-secondary" onClick={() => setShowCustom((value) => !value)} aria-expanded={showCustom}>＋ Добавить свой продукт</button></div>
-        {showCustom && <form className="custom-product-form" onSubmit={addCustomProduct}><label className="field"><span>Название</span><input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} required /></label><label className="field"><span>Категория</span><select value={custom.category} onChange={(e) => setCustom({ ...custom, category: e.target.value as Product['category'] })}><option>Овощи</option><option>Фрукты</option><option>Другое</option></select></label><label className="field"><span>Количество, кг</span><input type="number" min="0.1" value={custom.quantityKg} onChange={(e) => setCustom({ ...custom, quantityKg: Number(e.target.value) })} /></label><label className="field"><span>Макс. время, ч</span><input type="number" min="0.1" step="0.5" value={custom.maxDeliveryTime} onChange={(e) => setCustom({ ...custom, maxDeliveryTime: Number(e.target.value) })} /></label><button className="button button-primary" type="submit">Добавить</button></form>}
+        {showCustom && <form className="custom-product-form" onSubmit={addCustomProduct}><label className="field"><span>Название</span><input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} required /></label><label className="field"><span>Категория</span><select value={custom.category} onChange={(e) => setCustom({ ...custom, category: e.target.value as Product['category'] })}><option>Фрукты</option><option>Овощи</option></select></label><label className="field"><span>Количество, кг</span><input type="number" min="0.1" value={custom.quantityKg} onChange={(e) => setCustom({ ...custom, quantityKg: Number(e.target.value) })} /></label><label className="field"><span>Макс. время, ч</span><input type="number" min="0.1" step="0.5" value={custom.maxDeliveryTime} onChange={(e) => setCustom({ ...custom, maxDeliveryTime: Number(e.target.value) })} /></label><button className="button button-primary" type="submit">Добавить</button></form>}
         {errors.products && <p className="section-error">{errors.products}</p>}
-        <div className="product-grid">
-          {products.map((product) => <article key={product.id} className={`product-card ${product.selected ? 'is-active' : ''}`}><label className="product-select"><input type="checkbox" checked={product.selected} onChange={(e) => updateProduct(product.id, { selected: e.target.checked })} /><span className="checkmark" /><ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} /><span><b>{product.name}</b><small>{product.category}</small></span></label><div className="product-fields"><label className="field compact"><span>Количество, кг</span><input type="number" min="0" value={product.quantityKg} disabled={!product.selected} onChange={(e) => updateProduct(product.id, { quantityKg: Number(e.target.value) })} aria-invalid={Boolean(errors[`${product.id}-quantity`])} />{errors[`${product.id}-quantity`] && <small className="field-error">{errors[`${product.id}-quantity`]}</small>}</label><label className="field compact"><span>Макс. доставка, ч</span><input type="number" min="0.1" step="0.5" value={product.maxDeliveryTime} disabled={!product.selected} onChange={(e) => updateProduct(product.id, { maxDeliveryTime: Number(e.target.value) })} aria-invalid={Boolean(errors[`${product.id}-time`])} />{errors[`${product.id}-time`] && <small className="field-error">{errors[`${product.id}-time`]}</small>}</label></div></article>)}
+        <div className="category-tabs" role="tablist" aria-label="Категории урожая">
+          {(['Фрукты', 'Овощи'] as const).map((category) => <button key={category} type="button" role="tab" aria-selected={activeCategory === category} aria-controls="product-category-panel" className={`category-tab ${activeCategory === category ? 'is-active' : ''}`} onClick={() => setActiveCategory(category)}><span>{category}</span><b>{products.filter((product) => product.category === category).length}</b></button>)}
+        </div>
+        <div className="product-grid" id="product-category-panel" role="tabpanel" aria-label={activeCategory}>
+          {visibleProducts.map((product) => <article key={product.id} className={`product-card ${product.selected ? 'is-active' : ''}`}><label className="product-select"><input type="checkbox" checked={product.selected} onChange={(e) => updateProduct(product.id, { selected: e.target.checked })} /><span className="checkmark" /><ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} /><span><b>{product.name}</b><small>{product.category}</small></span></label><div className="product-fields"><label className="field compact"><span>Количество, кг</span><input type="number" min="0" value={product.quantityKg} disabled={!product.selected} onChange={(e) => updateProduct(product.id, { quantityKg: Number(e.target.value) })} aria-invalid={Boolean(errors[`${product.id}-quantity`])} />{errors[`${product.id}-quantity`] && <small className="field-error">{errors[`${product.id}-quantity`]}</small>}</label><label className="field compact"><span>Макс. доставка, ч</span><input type="number" min="0.1" step="0.5" value={product.maxDeliveryTime} disabled={!product.selected} onChange={(e) => updateProduct(product.id, { maxDeliveryTime: Number(e.target.value) })} aria-invalid={Boolean(errors[`${product.id}-time`])} />{errors[`${product.id}-time`] && <small className="field-error">{errors[`${product.id}-time`]}</small>}</label></div></article>)}
         </div>
       </section>
 

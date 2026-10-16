@@ -3,12 +3,14 @@
 import unittest
 from collections import defaultdict
 
+from backend.main import optimize as api_optimize
 from backend.optimizer import optimize_shipments
 from backend.sample_data import (
     base_scenario,
     increased_strawberry_price_scenario,
     unavailable_vehicle_scenario,
 )
+from backend.schemas import OptimizeRequest
 
 
 class OptimizerTest(unittest.TestCase):
@@ -90,6 +92,21 @@ class OptimizerTest(unittest.TestCase):
             base_totals[("strawberry", "buyer_5")],
         )
         self.assertGreater(result["profit"], base_result["profit"])
+
+    def test_combined_changes_are_recalculated_by_api(self):
+        base_data = base_scenario()
+        base_result = api_optimize(OptimizeRequest.model_validate(base_data))
+
+        combined_data = increased_strawberry_price_scenario()
+        combined_data["vehicles"]["truck_1"]["available"] = False
+        result = api_optimize(OptimizeRequest.model_validate(combined_data))
+
+        self.assert_feasible_and_consistent(combined_data, result)
+        self.assertAlmostEqual(result["used_capacity"]["truck_1"], 0)
+        self.assertLessEqual(sum(result["used_capacity"].values()), 170)
+        self.assertGreaterEqual(result["profit"], 0)
+        self.assertNotEqual(result["shipments"], base_result["shipments"])
+        self.assertNotEqual(result["profit"], base_result["profit"])
 
 
 if __name__ == "__main__":

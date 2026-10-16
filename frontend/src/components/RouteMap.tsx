@@ -93,6 +93,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
         ]
       : DEFAULT_FARM_COORDINATES
     const map = L.map(containerRef.current, { zoomControl: true, minZoom: 4 }).setView(initialCenter, initialBuyer ? 10 : 7)
+    map.attributionControl.setPrefix(false)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,

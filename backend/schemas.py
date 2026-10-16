@@ -22,6 +22,9 @@ class OptimizeRequest(BaseModel):
     demand: Dict[str, Dict[str, float]]
     prices: Dict[str, Dict[str, float]]
     vehicles: Dict[str, VehicleInput] = Field(min_length=1)
+    max_delivery_time: Dict[str, float]
+    delivery_time: Dict[str, Dict[str, float]]
+    delivery_cost: Dict[str, Dict[str, float]]
 
     @model_validator(mode="after")
     def validate_related_keys_and_values(self):
@@ -40,6 +43,16 @@ class OptimizeRequest(BaseModel):
             raise ValueError("demand должен содержать все и только указанные продукты")
         if set(self.prices) != product_keys:
             raise ValueError("prices должен содержать все и только указанные продукты")
+        if set(self.max_delivery_time) != product_keys:
+            raise ValueError(
+                "max_delivery_time должен содержать все и только указанные продукты"
+            )
+
+        vehicle_keys = set(self.vehicles)
+        if set(self.delivery_time) != vehicle_keys:
+            raise ValueError("delivery_time должен содержать все и только указанные машины")
+        if set(self.delivery_cost) != vehicle_keys:
+            raise ValueError("delivery_cost должен содержать все и только указанные машины")
 
         for product in self.products:
             if set(self.demand[product]) != buyer_keys:
@@ -47,12 +60,25 @@ class OptimizeRequest(BaseModel):
             if set(self.prices[product]) != buyer_keys:
                 raise ValueError(f"prices.{product} должен содержать всех покупателей")
 
-        numeric_values = list(self.stock.values())
+        for vehicle_id in self.vehicles:
+            if set(self.delivery_time[vehicle_id]) != buyer_keys:
+                raise ValueError(
+                    f"delivery_time.{vehicle_id} должен содержать всех покупателей"
+                )
+            if set(self.delivery_cost[vehicle_id]) != buyer_keys:
+                raise ValueError(
+                    f"delivery_cost.{vehicle_id} должен содержать всех покупателей"
+                )
+
+        numeric_values = list(self.stock.values()) + list(self.max_delivery_time.values())
         for product in self.products:
             numeric_values.extend(self.demand[product].values())
             numeric_values.extend(self.prices[product].values())
+        for vehicle_id in self.vehicles:
+            numeric_values.extend(self.delivery_time[vehicle_id].values())
+            numeric_values.extend(self.delivery_cost[vehicle_id].values())
         if any(value < 0 for value in numeric_values):
-            raise ValueError("Запасы, спрос и цены не могут быть отрицательными")
+            raise ValueError("Числовые параметры не могут быть отрицательными")
 
         return self
 

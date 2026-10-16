@@ -7,7 +7,17 @@ import pulp
 
 
 def _validate_data(data: dict[str, Any]) -> None:
-    required = {"products", "buyers", "stock", "demand", "prices", "vehicles"}
+    required = {
+        "products",
+        "buyers",
+        "stock",
+        "demand",
+        "prices",
+        "vehicles",
+        "max_delivery_time",
+        "delivery_time",
+        "delivery_cost",
+    }
     missing = required - data.keys()
     if missing:
         raise ValueError(f"Не хватает полей: {', '.join(sorted(missing))}")
@@ -20,19 +30,45 @@ def _validate_data(data: dict[str, Any]) -> None:
         raise ValueError("Списки продуктов, покупателей и машин не должны быть пустыми")
     if len(set(products)) != len(products) or len(set(buyers)) != len(buyers):
         raise ValueError("Идентификаторы продуктов и покупателей должны быть уникальными")
+    if set(data["max_delivery_time"]) != set(products):
+        raise ValueError("max_delivery_time должен содержать все продукты")
+    if set(data["delivery_time"]) != set(vehicles):
+        raise ValueError("delivery_time должен содержать все машины")
+    if set(data["delivery_cost"]) != set(vehicles):
+        raise ValueError("delivery_cost должен содержать все машины")
 
     values: list[tuple[str, Any]] = []
     for product in products:
         values.append((f"stock.{product}", data["stock"][product]))
+        values.append(
+            (f"max_delivery_time.{product}", data["max_delivery_time"][product])
+        )
         for buyer in buyers:
             values.append((f"demand.{product}.{buyer}", data["demand"][product][buyer]))
             values.append((f"prices.{product}.{buyer}", data["prices"][product][buyer]))
 
     for vehicle_id, vehicle in vehicles.items():
+        if set(data["delivery_time"][vehicle_id]) != set(buyers):
+            raise ValueError(f"delivery_time.{vehicle_id} должен содержать всех покупателей")
+        if set(data["delivery_cost"][vehicle_id]) != set(buyers):
+            raise ValueError(f"delivery_cost.{vehicle_id} должен содержать всех покупателей")
         values.append((f"vehicles.{vehicle_id}.capacity", vehicle["capacity"]))
         values.append((f"vehicles.{vehicle_id}.cost", vehicle["cost"]))
         if not isinstance(vehicle["available"], bool):
             raise ValueError(f"vehicles.{vehicle_id}.available должен быть bool")
+        for buyer in buyers:
+            values.append(
+                (
+                    f"delivery_time.{vehicle_id}.{buyer}",
+                    data["delivery_time"][vehicle_id][buyer],
+                )
+            )
+            values.append(
+                (
+                    f"delivery_cost.{vehicle_id}.{buyer}",
+                    data["delivery_cost"][vehicle_id][buyer],
+                )
+            )
 
     for name, value in values:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -68,11 +104,18 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
         for buyer in buyers
         for vehicle_id in vehicle_ids
     )
-    transport_cost = pulp.lpSum(
+    fixed_transport_cost = pulp.lpSum(
         vehicles[vehicle_id]["cost"] * vehicle_used[vehicle_id]
         for vehicle_id in vehicle_ids
     )
-    model += revenue - transport_cost
+    route_transport_cost = pulp.lpSum(
+        data["delivery_cost"][vehicle_id][buyer]
+        * shipped[product][buyer][vehicle_id]
+        for product in products
+        for buyer in buyers
+        for vehicle_id in vehicle_ids
+    )
+    model += revenue - fixed_transport_cost - route_transport_cost
 
     for product in products:
         model += (
@@ -91,6 +134,12 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
                 )
                 <= data["demand"][product][buyer]
             )
+            for vehicle_id in vehicle_ids:
+                if (
+                    data["delivery_time"][vehicle_id][buyer]
+                    > data["max_delivery_time"][product]
+                ):
+                    model += shipped[product][buyer][vehicle_id] == 0
 
     for vehicle_id in vehicle_ids:
         model += (
@@ -134,11 +183,16 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
         row["quantity"] * data["prices"][row["product"]][row["buyer"]]
         for row in shipments
     )
-    calculated_transport_cost = sum(
+    fixed_cost = sum(
         vehicles[vehicle_id]["cost"]
         for vehicle_id in vehicle_ids
         if (vehicle_used[vehicle_id].value() or 0.0) > 0.5
     )
+    route_cost = sum(
+        row["quantity"] * data["delivery_cost"][row["vehicle"]][row["buyer"]]
+        for row in shipments
+    )
+    calculated_transport_cost = fixed_cost + route_cost
 
     return {
         "shipments": shipments,

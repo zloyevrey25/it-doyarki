@@ -63,6 +63,57 @@ BASE_DATA: dict[str, Any] = {
         "truck_2": {"capacity": 90, "cost": 25, "available": True},
         "truck_3": {"capacity": 80, "cost": 20, "available": True},
     },
+    "max_delivery_time": {
+        "strawberry": 3,
+        "tomato": 6,
+        "cucumber": 8,
+    },
+    "delivery_time": {
+        "truck_1": {
+            "buyer_1": 1,
+            "buyer_2": 2,
+            "buyer_3": 3,
+            "buyer_4": 4,
+            "buyer_5": 2.5,
+        },
+        "truck_2": {
+            "buyer_1": 2,
+            "buyer_2": 3,
+            "buyer_3": 4,
+            "buyer_4": 5,
+            "buyer_5": 6,
+        },
+        "truck_3": {
+            "buyer_1": 3,
+            "buyer_2": 4,
+            "buyer_3": 5,
+            "buyer_4": 6,
+            "buyer_5": 7,
+        },
+    },
+    "delivery_cost": {
+        "truck_1": {
+            "buyer_1": 0.20,
+            "buyer_2": 0.25,
+            "buyer_3": 0.30,
+            "buyer_4": 0.35,
+            "buyer_5": 0.40,
+        },
+        "truck_2": {
+            "buyer_1": 0.15,
+            "buyer_2": 0.20,
+            "buyer_3": 0.25,
+            "buyer_4": 0.30,
+            "buyer_5": 0.35,
+        },
+        "truck_3": {
+            "buyer_1": 0.10,
+            "buyer_2": 0.15,
+            "buyer_3": 0.20,
+            "buyer_4": 0.25,
+            "buyer_5": 0.30,
+        },
+    },
 }
 
 

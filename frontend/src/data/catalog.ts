@@ -20,7 +20,7 @@ export const DEFAULT_VEHICLES: Vehicle[] = [
 
 export const DEMO_BUYERS: Buyer[] = [
   {
-    id: 'buyer_1', name: 'СеверМаркет', city: 'Казань', distanceKm: 120, deliveryTime: 2, position: { x: 66, y: 25 },
+    id: 'buyer_1', name: 'СеверМаркет', city: 'Казань', address: 'Аграрная улица, 2, Казань', distanceKm: 23, deliveryTime: 0.5, coordinates: [55.7944104, 49.2135053],
     demands: [
       { productId: 'strawberry', requestedKg: 350, pricePerKg: 320 },
       { productId: 'tomato', requestedKg: 300, pricePerKg: 180 },
@@ -33,7 +33,7 @@ export const DEMO_BUYERS: Buyer[] = [
     ],
   },
   {
-    id: 'buyer_2', name: 'АгроСнаб', city: 'Уфа', distanceKm: 320, deliveryTime: 4, position: { x: 83, y: 48 },
+    id: 'buyer_2', name: 'АгроСнаб', city: 'Уфа', address: 'Гурьевская улица, 3А, Уфа', distanceKm: 526, deliveryTime: 7.3, coordinates: [54.7136009, 55.9881051],
     demands: [
       { productId: 'strawberry', requestedKg: 420, pricePerKg: 280 },
       { productId: 'tomato', requestedKg: 450, pricePerKg: 170 },
@@ -46,7 +46,7 @@ export const DEMO_BUYERS: Buyer[] = [
     ],
   },
   {
-    id: 'buyer_3', name: 'ВостокФуд', city: 'Самара', distanceKm: 500, deliveryTime: 6, position: { x: 72, y: 76 },
+    id: 'buyer_3', name: 'ВостокФуд', city: 'Самара', address: 'Заводское шоссе, 14А, Самара', distanceKm: 338, deliveryTime: 5.2, coordinates: [53.1976331, 50.2386006],
     demands: [
       { productId: 'strawberry', requestedKg: 260, pricePerKg: 420 },
       { productId: 'tomato', requestedKg: 520, pricePerKg: 160 },
@@ -59,7 +59,7 @@ export const DEMO_BUYERS: Buyer[] = [
     ],
   },
   {
-    id: 'buyer_4', name: 'ВолгаРитейл', city: 'Ульяновск', distanceKm: 390, deliveryTime: 5, position: { x: 32, y: 78 },
+    id: 'buyer_4', name: 'ВолгаРитейл', city: 'Ульяновск', address: 'Московское шоссе, 9, Ульяновск', distanceKm: 218, deliveryTime: 3.3, coordinates: [54.2987514, 48.2879325],
     demands: [
       { productId: 'strawberry', requestedKg: 300, pricePerKg: 350 },
       { productId: 'tomato', requestedKg: 380, pricePerKg: 175 },
@@ -141,3 +141,5 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
 }
 
 export const ROUTE_COLORS = ['#1d8f5a', '#3578d4', '#8b5cc7', '#d47b35']
+
+export const DEFAULT_FARM_COORDINATES: [number, number] = [55.6493585, 49.3054794]

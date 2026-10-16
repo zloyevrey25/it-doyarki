@@ -27,7 +27,7 @@ const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [farmLocation, setFarmLocation] = useState('Казань, Республика Татарстан')
+  const [farmLocation, setFarmLocation] = useState('село Большие Кабаны, Республика Татарстан')
   const [products, setProducts] = useState<Product[]>(PRODUCT_CATALOG)
   const [vehicles, setVehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES)
   const [selectedBuyers, setSelectedBuyers] = useState<string[]>([])

@@ -32,9 +32,10 @@ export interface Buyer {
   id: string
   name: string
   city: string
+  address: string
   distanceKm: number
   deliveryTime: number
-  position: { x: number; y: number }
+  coordinates: [number, number]
   demands: BuyerDemand[]
 }
 

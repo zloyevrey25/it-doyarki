@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
 import { ProductMascot } from '../components/ProductMascot'
 import { TruckIllustration } from '../components/TruckIllustration'
@@ -9,9 +9,7 @@ import '../input-step.css'
 
 export function InputStep() {
   const { farmLocation, setFarmLocation, products, setProducts, vehicles, setVehicles, setOptimization, setComparison, setStep, setStatus, setError } = useApp()
-  const [showCustom, setShowCustom] = useState(false)
   const [activeCategory, setActiveCategory] = useState<'Фрукты' | 'Овощи'>('Фрукты')
-  const [custom, setCustom] = useState({ name: '', category: 'Овощи' as Product['category'], quantityKg: 100, maxDeliveryTime: 12 })
 
   const visibleProducts = products.filter((product) => product.category === activeCategory)
 
@@ -30,20 +28,6 @@ export function InputStep() {
 
   const updateProduct = (id: string, patch: Partial<Product>) => setProducts((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item))
 
-  const addCustomProduct = (event: FormEvent) => {
-    event.preventDefault()
-    if (!custom.name.trim() || custom.quantityKg <= 0 || custom.maxDeliveryTime <= 0) return
-    const id = `custom_${Date.now()}`
-    setProducts((items) => [...items, {
-      id, name: custom.name.trim(), category: custom.category, selected: true,
-      quantityKg: custom.quantityKg, maxDeliveryTime: custom.maxDeliveryTime,
-      color: '#8ebd63', accent: '#4b7d3e', mascotShape: 'generic',
-    }])
-    setActiveCategory(custom.category as 'Фрукты' | 'Овощи')
-    setCustom({ name: '', category: 'Овощи', quantityKg: 100, maxDeliveryTime: 12 })
-    setShowCustom(false)
-  }
-
   const submit = async () => {
     if (Object.keys(errors).length) return
     setStatus('loading'); setError(''); setComparison(null)
@@ -60,13 +44,12 @@ export function InputStep() {
       <div className="page-heading"><span className="eyebrow">Этап 1 из 3</span><h1>Исходные данные</h1><p>Укажите урожай, местоположение и транспорт — остальное рассчитает оптимизатор.</p></div>
 
       <section className="panel location-panel" aria-labelledby="location-title">
-        <div className="section-title"><span className="section-icon">⌖</span><div><h2 id="location-title">Местоположение фермы</h2><p>Город или адрес без использования внешнего геокодинга</p></div></div>
-        <label className="field"><span>Населённый пункт / адрес</span><input value={farmLocation} onChange={(event) => setFarmLocation(event.target.value)} placeholder="Например, Казань" aria-invalid={Boolean(errors.location)} />{errors.location && <small className="field-error">{errors.location}</small>}</label>
+        <div className="section-title"><div><h2 id="location-title">Местоположение фермы</h2><p>Укажите реальный адрес — он станет начальной точкой маршрутов</p></div></div>
+        <label className="field"><span>Населённый пункт / адрес</span><input value={farmLocation} onChange={(event) => setFarmLocation(event.target.value)} placeholder="Например, село Большие Кабаны, Татарстан" aria-invalid={Boolean(errors.location)} />{errors.location && <small className="field-error">{errors.location}</small>}</label>
       </section>
 
       <section className="panel" aria-labelledby="harvest-title">
-        <div className="section-title section-title-row"><div className="title-group"><span className="section-icon">✣</span><div><h2 id="harvest-title">Ваш урожай</h2><p>Выберите продукты и задайте доступный объём</p></div></div><button className="button button-secondary" onClick={() => setShowCustom((value) => !value)} aria-expanded={showCustom}>＋ Добавить свой продукт</button></div>
-        {showCustom && <form className="custom-product-form" onSubmit={addCustomProduct}><label className="field"><span>Название</span><input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} required /></label><label className="field"><span>Категория</span><select value={custom.category} onChange={(e) => setCustom({ ...custom, category: e.target.value as Product['category'] })}><option>Фрукты</option><option>Овощи</option></select></label><label className="field"><span>Количество, кг</span><input type="number" min="0.1" value={custom.quantityKg} onChange={(e) => setCustom({ ...custom, quantityKg: Number(e.target.value) })} /></label><label className="field"><span>Макс. время, ч</span><input type="number" min="0.1" step="0.5" value={custom.maxDeliveryTime} onChange={(e) => setCustom({ ...custom, maxDeliveryTime: Number(e.target.value) })} /></label><button className="button button-primary" type="submit">Добавить</button></form>}
+        <div className="section-title"><div><h2 id="harvest-title">Ваш урожай</h2><p>Выберите продукты и задайте доступный объём</p></div></div>
         {errors.products && <p className="section-error">{errors.products}</p>}
         <div className="category-tabs" role="tablist" aria-label="Категории урожая">
           {(['Фрукты', 'Овощи'] as const).map((category) => <button key={category} type="button" role="tab" aria-selected={activeCategory === category} aria-controls="product-category-panel" className={`category-tab ${activeCategory === category ? 'is-active' : ''}`} onClick={() => setActiveCategory(category)}><span>{category}</span><b>{products.filter((product) => product.category === category).length}</b></button>)}
@@ -77,7 +60,7 @@ export function InputStep() {
       </section>
 
       <section className="panel" aria-labelledby="transport-title">
-        <div className="section-title"><span className="section-icon">▰</span><div><h2 id="transport-title">Транспорт</h2><p>Недоступные машины не попадут в план</p></div></div>
+        <div className="section-title"><div><h2 id="transport-title">Транспорт</h2><p>Недоступные машины не попадут в план</p></div></div>
         {errors.vehicles && <p className="section-error">{errors.vehicles}</p>}
         <div className="vehicle-grid">{vehicles.map((vehicle) => <article className={`vehicle-card ${vehicle.available ? '' : 'is-disabled'}`} key={vehicle.id}><TruckIllustration color={vehicle.color} muted={!vehicle.available} /><div className="vehicle-main"><strong className="plate-number">{vehicle.plateNumber}</strong><b>{vehicle.model}</b><small>Грузоподъёмность: {vehicle.capacityKg.toLocaleString('ru-RU')} кг</small></div><label className="switch"><input type="checkbox" checked={vehicle.available} onChange={(e) => setVehicles((items) => items.map((item) => item.id === vehicle.id ? { ...item, available: e.target.checked } : item))} aria-label={`${vehicle.available ? 'Сделать недоступной' : 'Сделать доступной'} машину ${vehicle.plateNumber}`} /><span /><b>{vehicle.available ? 'Доступна' : 'Недоступна'}</b></label></article>)}</div>
       </section>

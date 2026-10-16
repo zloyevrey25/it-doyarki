@@ -5,6 +5,7 @@ from typing import Any
 
 
 BASE_DATA: dict[str, Any] = {
+    "farm_location": "Республика Татарстан",
     "products": ["strawberry", "tomato", "cucumber"],
     "buyers": ["buyer_1", "buyer_2", "buyer_3", "buyer_4", "buyer_5"],
     "stock": {
@@ -59,9 +60,34 @@ BASE_DATA: dict[str, Any] = {
         },
     },
     "vehicles": {
-        "truck_1": {"capacity": 100, "cost": 30, "available": True},
-        "truck_2": {"capacity": 90, "cost": 25, "available": True},
-        "truck_3": {"capacity": 80, "cost": 20, "available": True},
+        "truck_1": {
+            "capacity": 100,
+            "cost": 30,
+            "available": True,
+            "model": "Mercedes-Benz Atego",
+            "plate_number": "В456МТ 116",
+        },
+        "truck_2": {
+            "capacity": 90,
+            "cost": 25,
+            "available": True,
+            "model": "ГАЗон Next",
+            "plate_number": "А123ВС 116",
+        },
+        "truck_3": {
+            "capacity": 80,
+            "cost": 20,
+            "available": True,
+            "model": "Isuzu NPR",
+            "plate_number": "Е789КХ 116",
+        },
+    },
+    "buyer_info": {
+        "buyer_1": {"name": "СеверМаркет", "city": "Казань", "distance_km": 120},
+        "buyer_2": {"name": "ВолгаФуд", "city": "Зеленодольск", "distance_km": 85},
+        "buyer_3": {"name": "ФрешОпт", "city": "Чистополь", "distance_km": 145},
+        "buyer_4": {"name": "АгроСбыт", "city": "Елабуга", "distance_km": 190},
+        "buyer_5": {"name": "ПродуктСити", "city": "Иннополис", "distance_km": 105},
     },
     "max_delivery_time": {
         "strawberry": 3,

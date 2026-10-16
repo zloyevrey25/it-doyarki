@@ -3,6 +3,7 @@
 import unittest
 from collections import defaultdict
 
+from backend.main import compare_routes as api_compare_routes
 from backend.main import optimize as api_optimize
 from backend.optimizer import optimize_shipments
 from backend.sample_data import (
@@ -10,7 +11,7 @@ from backend.sample_data import (
     increased_strawberry_price_scenario,
     unavailable_vehicle_scenario,
 )
-from backend.schemas import OptimizeRequest
+from backend.schemas import CompareRoutesRequest, OptimizeRequest
 
 
 class OptimizerTest(unittest.TestCase):
@@ -236,6 +237,146 @@ class OptimizerTest(unittest.TestCase):
         self.assertAlmostEqual(result["profit"], 0)
         self.assertAlmostEqual(result["leftovers"]["product"], 1)
         self.assertAlmostEqual(result["used_capacity"]["truck"], 0)
+
+    def test_frontend_metrics_are_calculated(self):
+        data = base_scenario()
+        result = optimize_shipments(data)
+
+        buyer = "buyer_1"
+        product = "strawberry"
+        product_metric = result["buyer_metrics"][buyer]["products"][product]
+        self.assertAlmostEqual(
+            product_metric["potential_revenue"],
+            data["demand"][product][buyer] * data["prices"][product][buyer],
+        )
+        self.assertAlmostEqual(
+            result["buyer_metrics"][buyer]["total_potential_revenue"],
+            sum(
+                data["demand"][item][buyer] * data["prices"][item][buyer]
+                for item in data["products"]
+            ),
+        )
+
+        truck = "truck_1"
+        self.assertAlmostEqual(
+            result["vehicle_metrics"][truck]["utilization_percent"],
+            result["used_capacity"][truck] / data["vehicles"][truck]["capacity"] * 100,
+        )
+        total_demand = sum(
+            data["demand"][item][customer]
+            for item in data["products"]
+            for customer in data["buyers"]
+        )
+        total_shipped = sum(row["quantity"] for row in result["shipments"])
+        self.assertAlmostEqual(
+            result["plan_metrics"]["fulfillment_rate_percent"],
+            total_shipped / total_demand * 100,
+            places=6,
+        )
+
+    def test_delivery_margin_and_all_spoilage_risk_levels(self):
+        data = {
+            "products": ["low_risk", "medium_risk", "high_risk"],
+            "buyers": ["buyer"],
+            "stock": {"low_risk": 1, "medium_risk": 1, "high_risk": 1},
+            "demand": {
+                "low_risk": {"buyer": 1},
+                "medium_risk": {"buyer": 1},
+                "high_risk": {"buyer": 1},
+            },
+            "prices": {
+                "low_risk": {"buyer": 10},
+                "medium_risk": {"buyer": 10},
+                "high_risk": {"buyer": 10},
+            },
+            "vehicles": {
+                "truck": {"capacity": 3, "cost": 0, "available": True},
+            },
+            "max_delivery_time": {
+                "low_risk": 2,
+                "medium_risk": 1.5,
+                "high_risk": 1.1,
+            },
+            "delivery_time": {"truck": {"buyer": 1}},
+            "delivery_cost": {"truck": {"buyer": 0}},
+        }
+
+        result = optimize_shipments(data)
+        shipments = {row["product"]: row for row in result["shipments"]}
+
+        self.assertAlmostEqual(shipments["low_risk"]["delivery_time_margin"], 1)
+        self.assertAlmostEqual(shipments["medium_risk"]["delivery_time_margin"], 0.5)
+        self.assertAlmostEqual(shipments["high_risk"]["delivery_time_margin"], 0.1)
+        self.assertEqual(shipments["low_risk"]["spoilage_risk"], "low")
+        self.assertEqual(shipments["medium_risk"]["spoilage_risk"], "medium")
+        self.assertEqual(shipments["high_risk"]["spoilage_risk"], "high")
+
+    def test_compare_routes_returns_distinct_ranked_feasible_solutions(self):
+        data = base_scenario()
+        request_data = {
+            **data,
+            "selected_buyers": ["buyer_1", "buyer_2", "buyer_3"],
+            "max_solutions": 3,
+        }
+        response = api_compare_routes(
+            CompareRoutesRequest.model_validate(request_data)
+        )
+
+        solutions = response["solutions"]
+        self.assertGreaterEqual(len(solutions), 2)
+        selected = set(request_data["selected_buyers"])
+        signatures = []
+        for solution in solutions:
+            self.assertTrue(set(solution["buyers_used"]).issubset(selected))
+            self.assertTrue(
+                all(row["buyer"] in selected for row in solution["shipments"])
+            )
+            self.assert_feasible_and_consistent(data, solution)
+            signatures.append(
+                frozenset(
+                    (route["vehicle"], route["buyer"])
+                    for route in solution["route_metrics"]
+                )
+            )
+
+        self.assertEqual(len(signatures), len(set(signatures)))
+        self.assertAlmostEqual(
+            response["recommended_solution"]["profit"],
+            max(solution["profit"] for solution in solutions),
+        )
+
+    def test_compare_routes_returns_one_solution_when_only_one_route_exists(self):
+        data = self.delivery_time_scenario()
+        response = api_compare_routes(
+            CompareRoutesRequest.model_validate(
+                {
+                    **data,
+                    "selected_buyers": ["buyer"],
+                    "max_solutions": 3,
+                }
+            )
+        )
+
+        self.assertEqual(len(response["solutions"]), 1)
+        self.assertTrue(response["solutions"][0]["recommended"])
+
+    def test_compare_routes_never_uses_unavailable_vehicle(self):
+        data = base_scenario()
+        data["vehicles"]["truck_1"]["available"] = False
+        response = api_compare_routes(
+            CompareRoutesRequest.model_validate(
+                {
+                    **data,
+                    "selected_buyers": data["buyers"],
+                    "max_solutions": 3,
+                }
+            )
+        )
+
+        for solution in response["solutions"]:
+            self.assertNotIn("truck_1", solution["vehicles_used"])
+            self.assertAlmostEqual(solution["used_capacity"]["truck_1"], 0)
+            self.assert_feasible_and_consistent(data, solution)
 
 
 if __name__ == "__main__":

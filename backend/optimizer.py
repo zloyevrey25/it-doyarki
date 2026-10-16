@@ -80,8 +80,9 @@ def _validate_data(data: dict[str, Any]) -> None:
 def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
     """Рассчитать план с максимальной прибылью.
 
-    Объёмы считаются непрерывными, каждая машина может выполнить один рейс,
-    а её стоимость списывается один раз, если машина используется.
+    Объёмы считаются непрерывными. Фиксированная стоимость машины списывается
+    один раз при её использовании, а стоимость рейса — один раз для каждой
+    использованной пары «машина — покупатель».
     """
     _validate_data(data)
 
@@ -97,6 +98,9 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
     vehicle_used = pulp.LpVariable.dicts(
         "vehicle_used", vehicle_ids, lowBound=0, upBound=1, cat="Binary"
     )
+    route_used = pulp.LpVariable.dicts(
+        "route_used", (vehicle_ids, buyers), lowBound=0, upBound=1, cat="Binary"
+    )
 
     revenue = pulp.lpSum(
         data["prices"][product][buyer] * shipped[product][buyer][vehicle_id]
@@ -110,8 +114,7 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
     )
     route_transport_cost = pulp.lpSum(
         data["delivery_cost"][vehicle_id][buyer]
-        * shipped[product][buyer][vehicle_id]
-        for product in products
+        * route_used[vehicle_id][buyer]
         for buyer in buyers
         for vehicle_id in vehicle_ids
     )
@@ -151,8 +154,18 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
             <= vehicles[vehicle_id]["capacity"] * vehicle_used[vehicle_id]
         )
         model += vehicle_used[vehicle_id] <= int(vehicles[vehicle_id]["available"])
+        for buyer in buyers:
+            model += (
+                pulp.lpSum(
+                    shipped[product][buyer][vehicle_id] for product in products
+                )
+                <= vehicles[vehicle_id]["capacity"] * route_used[vehicle_id][buyer]
+            )
+            model += route_used[vehicle_id][buyer] <= vehicle_used[vehicle_id]
 
-    status_code = model.solve(pulp.PULP_CBC_CMD(msg=False))
+    status_code = model.solve(
+        pulp.PULP_CBC_CMD(msg=False, options=["preprocess off"])
+    )
     status = pulp.LpStatus[status_code]
     if status != "Optimal":
         raise RuntimeError(f"Оптимальное решение не найдено: {status}")
@@ -189,8 +202,10 @@ def optimize_shipments(data: dict[str, Any]) -> dict[str, Any]:
         if (vehicle_used[vehicle_id].value() or 0.0) > 0.5
     )
     route_cost = sum(
-        row["quantity"] * data["delivery_cost"][row["vehicle"]][row["buyer"]]
-        for row in shipments
+        data["delivery_cost"][vehicle_id][buyer]
+        for vehicle_id in vehicle_ids
+        for buyer in buyers
+        if (route_used[vehicle_id][buyer].value() or 0.0) > 0.5
     )
     calculated_transport_cost = fixed_cost + route_cost
 

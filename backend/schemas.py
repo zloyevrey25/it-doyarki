@@ -24,7 +24,7 @@ class OptimizeRequest(BaseModel):
     vehicles: Dict[str, VehicleInput] = Field(min_length=1)
     max_delivery_time: Dict[str, float]
     delivery_time: Dict[str, Dict[str, float]]
-    delivery_cost: Dict[str, Dict[str, float]]
+    delivery_cost: Dict[str, Dict[str, float]]  # стоимость отдельного рейса
 
     @model_validator(mode="after")
     def validate_related_keys_and_values(self):

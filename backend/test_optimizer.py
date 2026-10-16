@@ -52,14 +52,16 @@ class OptimizerTest(unittest.TestCase):
             row["quantity"] * data["prices"][row["product"]][row["buyer"]]
             for row in result["shipments"]
         )
+        used_routes = {
+            (row["vehicle"], row["buyer"]) for row in result["shipments"]
+        }
         expected_transport_cost = sum(
             data["vehicles"][vehicle_id]["cost"]
             for vehicle_id, quantity in by_vehicle.items()
             if quantity > 1e-7
         ) + sum(
-            row["quantity"]
-            * data["delivery_cost"][row["vehicle"]][row["buyer"]]
-            for row in result["shipments"]
+            data["delivery_cost"][vehicle_id][buyer]
+            for vehicle_id, buyer in used_routes
         )
         self.assertAlmostEqual(result["revenue"], expected_revenue)
         self.assertAlmostEqual(result["transport_cost"], expected_transport_cost)
@@ -183,6 +185,57 @@ class OptimizerTest(unittest.TestCase):
         self.assertAlmostEqual(result["profit"], 8)
         self.assertAlmostEqual(result["leftovers"]["product"], 1)
         self.assertAlmostEqual(result["used_capacity"]["truck"], 1)
+
+    def test_route_cost_is_charged_once_for_multiple_products(self):
+        data = {
+            "products": ["strawberry", "tomato"],
+            "buyers": ["buyer"],
+            "stock": {"strawberry": 1, "tomato": 1},
+            "demand": {
+                "strawberry": {"buyer": 1},
+                "tomato": {"buyer": 1},
+            },
+            "prices": {
+                "strawberry": {"buyer": 10},
+                "tomato": {"buyer": 10},
+            },
+            "vehicles": {
+                "truck": {"capacity": 2, "cost": 3, "available": True},
+            },
+            "max_delivery_time": {"strawberry": 2, "tomato": 4},
+            "delivery_time": {"truck": {"buyer": 1}},
+            "delivery_cost": {"truck": {"buyer": 4}},
+        }
+
+        result = optimize_shipments(data)
+
+        self.assertEqual(len(result["shipments"]), 2)
+        self.assertAlmostEqual(result["revenue"], 20)
+        self.assertAlmostEqual(result["transport_cost"], 7)
+        self.assertAlmostEqual(result["profit"], 13)
+
+    def test_unprofitable_route_is_not_used(self):
+        data = {
+            "products": ["product"],
+            "buyers": ["buyer"],
+            "stock": {"product": 1},
+            "demand": {"product": {"buyer": 1}},
+            "prices": {"product": {"buyer": 5}},
+            "vehicles": {
+                "truck": {"capacity": 1, "cost": 2, "available": True},
+            },
+            "max_delivery_time": {"product": 2},
+            "delivery_time": {"truck": {"buyer": 1}},
+            "delivery_cost": {"truck": {"buyer": 4}},
+        }
+
+        result = optimize_shipments(data)
+
+        self.assertEqual(result["shipments"], [])
+        self.assertAlmostEqual(result["transport_cost"], 0)
+        self.assertAlmostEqual(result["profit"], 0)
+        self.assertAlmostEqual(result["leftovers"]["product"], 1)
+        self.assertAlmostEqual(result["used_capacity"]["truck"], 0)
 
 
 if __name__ == "__main__":

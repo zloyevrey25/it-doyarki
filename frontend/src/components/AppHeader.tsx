@@ -2,11 +2,11 @@ import { useApp } from '../context/AppContext'
 
 const steps = ['Исходные данные', 'Покупатели и маршруты', 'Сравнение']
 
-export function AppHeader() {
+export function AppHeader({ onHome }: { onHome: () => void }) {
   const { step, setStep, status } = useApp()
   return (
     <header className="app-header">
-      <button className="brand" disabled={status === 'loading'} onClick={() => setStep(1)} aria-label="Перейти к исходным данным">
+      <button className="brand" onClick={onHome} aria-label="Перейти на стартовую страницу">
         <span className="brand-mark" aria-hidden="true">🌱</span>
         <span><strong>Спаси урожай</strong><small>Планировщик поставок</small></span>
       </button>

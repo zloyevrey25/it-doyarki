@@ -1,4 +1,5 @@
 import { useApp } from '../context/AppContext'
+import { ModelAssumptions } from './ModelAssumptions'
 
 const steps = ['Исходные данные', 'Покупатели и маршруты', 'Сравнение']
 
@@ -21,7 +22,10 @@ export function AppHeader({ onHome }: { onHome: () => void }) {
           )
         })}
       </nav>
-      {step > 1 ? <button className="button button-ghost header-back" disabled={status === 'loading'} onClick={() => setStep((step - 1) as 1 | 2)} aria-label="Вернуться на предыдущий этап">← Назад</button> : <span className="header-spacer" />}
+      <div className="header-actions">
+        <ModelAssumptions />
+        {step > 1 && <button className="button button-ghost header-back" disabled={status === 'loading'} onClick={() => setStep((step - 1) as 1 | 2)} aria-label="Вернуться на предыдущий этап">← Назад</button>}
+      </div>
     </header>
   )
 }

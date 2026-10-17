@@ -10,7 +10,11 @@ import './comparison-step.css'
 import { PlanChanges } from '../components/PlanChanges'
 import { buyerPlan } from '../data/buyerPlan'
 
-const routeProfitExplanation = 'Выручка минус затраты направления; фиксированная стоимость машины вычтена в итоговой прибыли'
+const routeProfitExplanation = 'Выручка минус затраты направления. Фиксированная стоимость машины учтена один раз в итоговой прибыли.'
+
+function RouteProfitHint() {
+  return <span className="info-hint" title={routeProfitExplanation} aria-label={routeProfitExplanation} tabIndex={0}>ⓘ</span>
+}
 
 interface AlternativePlanProps {
   solution: ComparisonSolution
@@ -43,14 +47,14 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
 
         <div className="alternative-detail-grid">
           <div>
-            <h3>Маршруты · до фикс. затрат</h3><p>{routeProfitExplanation}</p>
+            <h3>Маршруты · до фикс. затрат</h3>
             {solution.route_metrics.map((route) => {
               const vehicle = vehicles.find((item) => item.id === route.vehicle)
               return (
                 <div className="alternative-route-line" key={`${route.vehicle}-${route.buyer}`}>
                   <span><b>{route.buyer_name}</b><small>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч{vehicle?.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</small></span>
                   <span>{number.format(route.shipped_kg)} кг</span>
-                  <strong title={routeProfitExplanation} aria-label={`До фикс. затрат: ${money.format(route.route_profit)}`}>{money.format(route.route_profit)}</strong>
+                  <strong aria-label={`До фикс. затрат: ${money.format(route.route_profit)}`}>{money.format(route.route_profit)}</strong>
                 </div>
               )
             })}
@@ -100,60 +104,47 @@ export function ComparisonStep() {
 
   return (
     <main className="page page-comparison">
-      <PlanChanges />
       <div className="page-heading compact-page-heading">
         <span className="eyebrow">Этап 3 из 3</span>
-        <h1>Сравнение и оптимальное решение</h1>
-        <p>Главные показатели собраны в сводку, а подробности альтернатив можно раскрыть ниже.</p>
+        <h1>Результат расчёта</h1>
       </div>
 
-      <section className="frozen-summary compact-summary panel" aria-label="Зафиксированные исходные данные">
-        <div className="summary-location"><span>Ферма</span><b>{farmLocation}</b></div>
+      <section className="frozen-summary compact-summary" aria-label="Зафиксированные исходные данные">
+        <div className="summary-location"><span>Ферма</span><b title={farmLocation}>{farmLocation}</b></div>
         <div className="summary-group"><span>Урожай</span><div className="summary-chip-list">{selectedProducts.map((product) => <b key={product.id}>{product.name} · {number.format(product.quantityKg)} кг</b>)}</div></div>
         <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
       </section>
 
-      <section className="comparison-section compact-comparison">
-        <div className="section-title compact-section-title"><div><h2>Направления рекомендованного плана</h2><p>{routeProfitExplanation}</p></div></div>
-        <div className="route-columns compact-route-columns">
-          {selectedBuyers.map((buyerId) => {
-            const buyer = buyers.find((item) => item.id === buyerId)
-            if (!buyer) return null
-            const direction = buyerPlan(best, buyerId)
-
-            return (
-              <article className="compact-route-card" key={buyerId}>
-                <header><span className="route-index">{buyer.name.slice(0, 1)}</span><div><h3>{buyer.name}</h3><p>{buyer.address}</p></div></header>
-                <div className="route-highlight-grid">
-                  <span><small>Время по машинам</small><b>{direction.included ? `${direction.times.join(' / ')} ч` : '—'}</b></span>
-                  <span><small>Всего отгружено</small><b>{direction.included ? `${number.format(direction.weight)} кг` : '—'}</b></span>
-                  <span title={routeProfitExplanation}><small>До фикс. затрат</small><b className="positive">{direction.included ? money.format(direction.contribution) : '—'}</b></span>
-                  <span><small>Худший риск</small><b className={direction.risk ? `risk risk-${direction.risk}` : ''}>{direction.risk ? riskLabel(direction.risk) : '—'}</b></span>
-                </div>
-                <footer><span>{direction.included ? direction.vehicles.map((id) => { const vehicle = vehicles.find((v) => v.id === id); const route = best.route_metrics.find((r) => r.vehicle === id && r.buyer === buyerId); return `${vehicle?.plateNumber ?? id} · ${vehicle?.model ?? ''} · ${route?.delivery_time} ч` }).join('; ') : 'Не включён в рекомендованный план'}</span><b>Мин. запас времени: {direction.margin === null ? '—' : `${number.format(direction.margin)} ч`}</b></footer>
-              </article>
-            )
-          })}
-        </div>
-      </section>
-
       <section className="optimal-panel compact-optimal-panel">
         <div className="optimal-heading">
-          <div><span className="section-kicker">Рекомендовано оптимизатором</span><h2>Оптимальное решение</h2><p>{comparison.explanation}</p></div>
+          <div><h2>Рекомендованный план</h2><p title={comparison.explanation}>{comparison.explanation}</p></div>
           <span className="profit-pill">Прибыль <b>{money.format(best.profit)}</b></span>
         </div>
         <div className="optimal-metrics">
           <article><span>Выручка</span><strong>{money.format(best.revenue)}</strong></article>
           <article><span>Транспорт</span><strong>{money.format(best.transport_cost)}</strong></article>
-          <article><span>Итоговая прибыль</span><strong>{money.format(best.profit)}</strong></article>
           <article><span>Выполнение спроса</span><strong>{number.format(best.plan_metrics.fulfillment_rate_percent)}%</strong></article>
         </div>
-        <div className="optimal-grid">
-          <div><h3>Маршруты · до фикс. затрат</h3><small>{routeProfitExplanation}</small>{best.route_metrics.map((route) => <article className="optimal-route" key={`${route.vehicle}-${route.buyer}`}><div><b>{route.buyer_name}</b><small>{route.city} · {route.distance_km} км · {route.delivery_time} ч</small></div><span>{number.format(route.shipped_kg)} кг</span><strong title={routeProfitExplanation} aria-label={`До фикс. затрат: ${money.format(route.route_profit)}`}>{money.format(route.route_profit)}</strong></article>)}</div>
-          <div><h3>Что отправляем</h3>{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>{product && <ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} size={28}/>}<span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
-          <div><h3>Остатки</h3>{Object.entries(best.leftovers).map(([productId, value]) => <div className="leftover-line" key={productId}><span>{products.find((item) => item.id === productId)?.name ?? productId}</span><strong>{number.format(value)} кг</strong></div>)}</div>
+        <div className="shipment-summary">
+          <h3>Основные отгрузки</h3><div className="shipment-grid">{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>{product && <ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} size={24}/>}<span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
         </div>
-        <div className="constraint-list"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Доступность машин</span><span>✓ Сроки доставки</span></div>
+        <div className="plan-footer"><p className="leftovers-inline"><b>Остатки:</b> {Object.entries(best.leftovers).map(([productId, value], index) => <span key={productId}>{index > 0 && ' · '}{(products.find((item) => item.id === productId)?.name ?? productId).toLocaleLowerCase('ru-RU')} {number.format(value)} кг</span>)}</p><div className="constraint-list" aria-label="Проверки ограничений"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Машины</span><span>✓ Сроки</span></div></div>
+      </section>
+
+      <section className="comparison-section compact-comparison">
+        <div className="section-title compact-section-title"><div><h2>Направления рекомендованного плана</h2><p>До фикс. затрат <RouteProfitHint /></p></div></div>
+        <div className="compact-route-columns">
+          {selectedBuyers.map((buyerId) => {
+            const buyer = buyers.find((item) => item.id === buyerId)
+            if (!buyer) return null
+            const direction = buyerPlan(best, buyerId)
+            if (!direction.included) return <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article>
+            return <details className="compact-route-card" key={buyerId}>
+              <summary><span><h3>{buyer.name}</h3><small>{number.format(direction.weight)} кг · {money.format(direction.contribution)} · <b className={`risk risk-${direction.risk}`}>{riskLabel(direction.risk!)}</b></small></span><i aria-hidden="true">⌄</i></summary>
+              <div className="route-more"><span><small>Машины</small><b>{direction.vehicles.map((id) => { const vehicle = vehicles.find((item) => item.id === id); return `${vehicle?.plateNumber ?? id}${vehicle?.model ? ` · ${vehicle.model}` : ''}` }).join('; ')}</b></span><span><small>Время доставки</small><b>{direction.times.map((time) => `${number.format(time)} ч`).join(' / ')}</b></span><span><small>Мин. запас времени</small><b>{direction.margin === null ? '—' : `${number.format(direction.margin)} ч`}</b></span></div>
+            </details>
+          })}
+        </div>
       </section>
 
       {comparison.solutions.length > 1 && (
@@ -164,6 +155,8 @@ export function ComparisonStep() {
           </div>
         </section>
       )}
+
+      <PlanChanges />
 
       <section className="final-map compact-final-map">
         <div className="section-title compact-section-title"><div><h2>Карта итогового плана</h2><p>Только маршруты из рекомендованной комбинации</p></div></div>

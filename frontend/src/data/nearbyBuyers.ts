@@ -7,7 +7,7 @@ interface DeliveryCity {
   coordinates: [number, number]
 }
 
-export const DEFAULT_FARM_LOCATION = 'село Большие Кабаны, Республика Татарстан'
+export const DEFAULT_FARM_LOCATION = 'Обнинск'
 const MAX_DELIVERY_RADIUS_KM = 700
 
 const DELIVERY_CITIES: DeliveryCity[] = [
@@ -26,6 +26,7 @@ const DELIVERY_CITIES: DeliveryCity[] = [
   { city: 'Москва', coordinates: [55.7558, 37.6176] },
   { city: 'Смоленск', coordinates: [54.7826, 32.0453] },
   { city: 'Брянск', coordinates: [53.2521, 34.3717] },
+  { city: 'Малоярославец', coordinates: [55.0144, 36.4714] },
   { city: 'Калуга', coordinates: [54.5070, 36.2523] },
   { city: 'Тула', coordinates: [54.1931, 37.6173] },
   { city: 'Рязань', coordinates: [54.6095, 39.7126] },

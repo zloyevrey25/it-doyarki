@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { buildOptimizeRequest, DEFAULT_VEHICLES, PRODUCT_CATALOG } from '../data/catalog'
+import { buildOptimizeRequest, DEFAULT_FARM_COORDINATES, DEFAULT_VEHICLES, PRODUCT_CATALOG } from '../data/catalog'
 import { locationIdentity } from '../data/planChanges'
-import { DEFAULT_BUYERS } from '../data/nearbyBuyers'
+import { DEFAULT_BUYERS, DEFAULT_FARM_LOCATION } from '../data/nearbyBuyers'
 import type { Buyer, CompareRoutesResult, OptimizationResult, OptimizeRequest, Product, RequestStatus, Vehicle } from '../types'
 
 interface AppContextValue {
@@ -45,8 +45,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (saved === 'light' || saved === 'dark') return saved
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
-  const [farmLocation, setFarmLocation] = useState('село Большие Кабаны, Республика Татарстан')
-  const [farmCoordinates, setFarmCoordinates] = useState<[number, number]>([55.6493585, 49.3054794])
+  const [farmLocation, setFarmLocation] = useState(DEFAULT_FARM_LOCATION)
+  const [farmCoordinates, setFarmCoordinates] = useState<[number, number]>(DEFAULT_FARM_COORDINATES)
   const [buyers, setBuyers] = useState<Buyer[]>(DEFAULT_BUYERS)
   const [products, setProducts] = useState<Product[]>(PRODUCT_CATALOG)
   const [vehicles, setVehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES)

@@ -14,9 +14,9 @@ export const PRODUCT_CATALOG: Product[] = [
 ]
 
 export const DEFAULT_VEHICLES: Vehicle[] = [
-  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b', refrigerationHours: 0, speedKmh: 70, costPerKm: 7.2, routeBaseCost: 900 },
-  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f', refrigerationHours: 8, speedKmh: 68, costPerKm: 8.35, routeBaseCost: 900 },
-  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438', refrigerationHours: 12, speedKmh: 66, costPerKm: 9.5, routeBaseCost: 900 },
+  { id: 'truck_1', plateNumber: 'А067ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b', refrigerationHours: 0, speedKmh: 70, costPerKm: 7.2, routeBaseCost: 900 },
+  { id: 'truck_2', plateNumber: 'В670МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f', refrigerationHours: 8, speedKmh: 68, costPerKm: 8.35, routeBaseCost: 900 },
+  { id: 'truck_3', plateNumber: 'С676КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438', refrigerationHours: 12, speedKmh: 66, costPerKm: 9.5, routeBaseCost: 900 },
   { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792', refrigerationHours: 0, speedKmh: 65, costPerKm: 10.65, routeBaseCost: 900 },
 ]
 
@@ -78,4 +78,4 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
 
 export const ROUTE_COLORS = ['#1d8f5a', '#3578d4', '#8b5cc7', '#d47b35']
 
-export const DEFAULT_FARM_COORDINATES: [number, number] = [55.6493585, 49.3054794]
+export const DEFAULT_FARM_COORDINATES: [number, number] = [55.112005, 36.586531]

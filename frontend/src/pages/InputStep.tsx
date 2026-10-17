@@ -36,7 +36,7 @@ export function InputStep() {
     const example: Record<string, { quantityKg: number, maxDeliveryTime: number }> = {
       strawberry: { quantityKg: 900, maxDeliveryTime: 6 },
       tomato: { quantityKg: 1200, maxDeliveryTime: 10 },
-      cucumber: { quantityKg: 1550, maxDeliveryTime: 12 },
+      cucumber: { quantityKg: 1567, maxDeliveryTime: 12 },
     }
     setProducts((items) => items.map((item) => example[item.id]
       ? { ...item, selected: true, ...example[item.id] }
@@ -71,14 +71,14 @@ export function InputStep() {
   return (
     <main className="page page-input">
       {error && <p className="request-alert" role="alert">{error}</p>}
-      {offerDemo && <button className="button button-secondary" onClick={() => { setFarmLocation(DEFAULT_FARM_LOCATION); setError(''); setOfferDemo(false) }}>Выбрать демонстрационный адрес: Большие Кабаны</button>}
+      {offerDemo && <button className="button button-secondary" onClick={() => { setFarmLocation(DEFAULT_FARM_LOCATION); setError(''); setOfferDemo(false) }}>Выбрать демонстрационный адрес: Обнинск</button>}
       <fieldset disabled={status === 'loading'} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <div className="page-heading"><span className="eyebrow">Этап 1 из 4</span><h1>Исходные данные</h1><p>Укажите урожай, местоположение и транспорт — остальное рассчитает оптимизатор.</p></div>
 
       <section className="panel location-panel" aria-labelledby="location-title">
         <small>Компании демонстрационные. Охват ограничен локальным каталогом городов: нужны 4–5 покупателей в расчётном радиусе 700 км.</small>
         <div className="section-title"><div><h2 id="location-title">Местоположение фермы</h2><p>Укажите реальный адрес — он станет начальной точкой маршрутов</p></div></div>
-        <label className="field"><span>Населённый пункт / адрес</span><input list="farm-location-suggestions" value={farmLocation} onChange={(event) => setFarmLocation(event.target.value)} onBlur={(event) => setFarmLocation(canonicalFarmLocation(event.target.value))} placeholder="Например, село Большие Кабаны, Татарстан" aria-invalid={Boolean(errors.location)} />{errors.location && <small className="field-error">{errors.location}</small>}</label>
+        <label className="field"><span>Населённый пункт / адрес</span><input list="farm-location-suggestions" value={farmLocation} onChange={(event) => setFarmLocation(event.target.value)} onBlur={(event) => setFarmLocation(canonicalFarmLocation(event.target.value))} placeholder="Например, Обнинск" aria-invalid={Boolean(errors.location)} />{errors.location && <small className="field-error">{errors.location}</small>}</label>
         <datalist id="farm-location-suggestions">{FARM_LOCATION_SUGGESTIONS.map((location) => <option value={location} key={location} />)}</datalist>
       </section>
 

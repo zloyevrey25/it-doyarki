@@ -9,7 +9,7 @@ export function AppHeader({ onHome }: { onHome: () => void }) {
   return (
     <header className="app-header">
       <button className="brand" onClick={onHome} aria-label="Перейти на стартовую страницу">
-        <span className="brand-mark" aria-hidden="true">🌱</span>
+        <span className="brand-mark" aria-hidden="true"><img src="/favicon-strawberry.png" alt="" /></span>
         <span><strong>Спаси урожай</strong><small>Планировщик поставок</small></span>
       </button>
       <nav className="stepper" aria-label="Этапы планирования">

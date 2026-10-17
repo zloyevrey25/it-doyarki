@@ -36,7 +36,7 @@ export function InputStep() {
     const example: Record<string, { quantityKg: number, maxDeliveryTime: number }> = {
       strawberry: { quantityKg: 900, maxDeliveryTime: 6 },
       tomato: { quantityKg: 1200, maxDeliveryTime: 10 },
-      cucumber: { quantityKg: 700, maxDeliveryTime: 12 },
+      cucumber: { quantityKg: 1550, maxDeliveryTime: 12 },
     }
     setProducts((items) => items.map((item) => example[item.id]
       ? { ...item, selected: true, ...example[item.id] }
@@ -57,7 +57,7 @@ export function InputStep() {
       const reset = !!calculatedRequest && (locationIdentity(farmLocation) !== locationIdentity(calculatedRequest.farm_location ?? '') || found.map(buyerIdentity).sort().join('|') !== buyers.map(buyerIdentity).sort().join('|'))
       const nearbyBuyers = reset ? found : preservePrices(found, buyers)
       try { requireBuyerCoverage(nearbyBuyers) } catch (error) { setOfferDemo(true); throw error }
-      const request = buildOptimizeRequest(products, vehicles, farmLocation, nearbyBuyers)
+      const request = buildOptimizeRequest(products, vehicles, farmLocation, coordinates, nearbyBuyers)
       if (!validPrices(request)) throw new Error('Исправьте цены покупателей: требуется конечное неотрицательное число.')
       const result = await apiClient.optimize(request)
       setFarmCoordinates(coordinates); setBuyers(nearbyBuyers)

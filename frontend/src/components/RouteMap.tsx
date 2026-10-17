@@ -5,12 +5,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchJson } from '../api/network'
 import { useApp } from '../context/AppContext'
 import { ROUTE_COLORS } from '../data/catalog'
+import type { Itinerary } from '../types'
 
 interface Props {
   selectedBuyerIds: string[]
   activeBuyerIds?: string[]
   onToggleBuyer?: (buyerId: string) => void
   compact?: boolean
+  itineraries?: Itinerary[]
 }
 
 interface RouteLayer {
@@ -30,18 +32,24 @@ function textBlock(title: string, detail: string) {
   return wrapper
 }
 
-async function loadRoadRoute(from: [number, number], to: [number, number], signal: AbortSignal) {
-  const coordinates = `${from[1]},${from[0]};${to[1]},${to[0]}`
-  const result = await fetchJson<{
-    code: string
-    routes?: Array<{ geometry: { coordinates: Array<[number, number]> } }>
-  }>(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`, { signal }, 10000)
-  const geometry = result.routes?.[0]?.geometry.coordinates
-  if (result.code !== 'Ok' || !geometry) throw new Error('Маршрут не найден')
-  return geometry.map(([longitude, latitude]) => [latitude, longitude] as [number, number])
+async function loadRoadRoute(points: [number, number][], signal: AbortSignal) {
+  const route: [number, number][] = []
+  for (let index = 1; index < points.length; index += 1) {
+    const [from, to] = [points[index - 1], points[index]]
+    const coordinates = `${from[1]},${from[0]};${to[1]},${to[0]}`
+    const result = await fetchJson<{
+      code: string
+      routes?: Array<{ geometry: { coordinates: Array<[number, number]> } }>
+    }>(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`, { signal }, 10000)
+    const geometry = result.routes?.[0]?.geometry.coordinates
+    if (result.code !== 'Ok' || !geometry) throw new Error('Маршрут не найден')
+    const leg = geometry.map(([longitude, latitude]) => [latitude, longitude] as [number, number])
+    route.push(...(index === 1 ? leg : leg.slice(1)))
+  }
+  return route
 }
 
-export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, compact = false }: Props) {
+export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, compact = false, itineraries }: Props) {
   const { farmLocation, farmCoordinates, buyers } = useApp()
   const [tilesUnavailable, setTilesUnavailable] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -53,9 +61,12 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
   const selectedRef = useRef(selectedBuyerIds)
   const activeRef = useRef(activeBuyerIds)
   const activeKey = activeBuyerIds?.join('|') ?? ''
+  const itineraryBuyerIds = itineraries?.flatMap((item) => item.ordered_stops.map((stop) => stop.buyer))
+  const itineraryBuyerKey = itineraryBuyerIds?.join('|') ?? ''
+  const itineraryKey = itineraries?.map((item) => `${item.vehicle}:${item.id}:${item.ordered_stops.map((stop) => stop.buyer).join(',')}`).join('|') ?? ''
   const visibleBuyers = useMemo(
-    () => activeBuyerIds ? buyers.filter((buyer) => activeBuyerIds.includes(buyer.id)) : buyers,
-    [buyers, activeKey],
+    () => itineraryBuyerIds ? buyers.filter((buyer) => itineraryBuyerIds.includes(buyer.id)) : activeBuyerIds ? buyers.filter((buyer) => activeBuyerIds.includes(buyer.id)) : buyers,
+    [buyers, activeKey, itineraryBuyerKey],
   )
   const visibleKey = visibleBuyers.map((buyer) => `${buyer.id}:${buyer.coordinates.join(',')}`).join('|')
   const farmKey = farmCoordinates.join(',')
@@ -128,11 +139,16 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
         pointLayersRef.current.push(marker)
         bounds.extend(buyer.coordinates)
 
-        const fallback = L.polyline([farmCoordinates, buyer.coordinates], {
-          color, weight: isActive ? 5 : 3, opacity: isActive ? 0.9 : 0.38, dashArray: '7 7',
-        }).addTo(map)
-        if (toggleBuyerRef.current) fallback.on('click', () => toggleBuyerRef.current?.(buyer.id))
-        routeLayersRef.current.set(buyer.id, { layer: fallback, color, isRoadRoute: false })
+      })
+
+      const displayedRoutes = itineraries?.length
+        ? itineraries.map((item) => ({ key: `${item.vehicle}:${item.id}`, points: [farmCoordinates, ...item.ordered_stops.map((stop) => stop.coordinates)] as [number, number][], label: item.ordered_stops.map((stop) => stop.buyer_name).join(' → ') }))
+        : visibleBuyers.map((buyer) => ({ key: buyer.id, points: [farmCoordinates, buyer.coordinates] as [number, number][], label: buyer.name }))
+
+      displayedRoutes.forEach((route, index) => {
+        const color = ROUTE_COLORS[index % ROUTE_COLORS.length]
+        const fallback = L.polyline(route.points, { color, weight: 5, opacity: 0.9, dashArray: '7 7' }).addTo(map)
+        routeLayersRef.current.set(route.key, { layer: fallback, color, isRoadRoute: false })
       })
       fitTimer = window.setTimeout(() => {
         if (cancelled) return
@@ -140,19 +156,17 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
           map.fitBounds(bounds, { padding: [46, 46], maxZoom: compact ? 10 : 7, animate: false })
       }, 80)
 
-      await Promise.all(visibleBuyers.map(async (buyer, index) => {
+      await Promise.all(displayedRoutes.map(async (displayedRoute, index) => {
         try {
-          const roadCoordinates = await loadRoadRoute(farmCoordinates, buyer.coordinates, controller.signal)
+          const roadCoordinates = await loadRoadRoute(displayedRoute.points, controller.signal)
           if (cancelled) return
-          routeLayersRef.current.get(buyer.id)?.layer.remove()
+          routeLayersRef.current.get(displayedRoute.key)?.layer.remove()
           const color = ROUTE_COLORS[index % ROUTE_COLORS.length]
-          const isActive = activeRef.current ? activeRef.current.includes(buyer.id) : selectedRef.current.includes(buyer.id)
           const route = L.polyline(roadCoordinates, {
-            color, weight: isActive ? 5 : 3, opacity: isActive ? 0.9 : 0.42,
+            color, weight: 5, opacity: 0.9,
           }).addTo(map)
-          route.bindTooltip(`${buyer.name}: ${buyer.distanceKm} км`)
-          if (toggleBuyerRef.current) route.on('click', () => toggleBuyerRef.current?.(buyer.id))
-          routeLayersRef.current.set(buyer.id, { layer: route, color, isRoadRoute: true })
+          route.bindTooltip(displayedRoute.label)
+          routeLayersRef.current.set(displayedRoute.key, { layer: route, color, isRoadRoute: true })
         } catch {
           // Пунктирная линия остаётся безопасным резервом при недоступности OSRM.
         }
@@ -165,11 +179,11 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
       controller.abort()
       if (fitTimer !== undefined) window.clearTimeout(fitTimer)
     }
-  }, [farmLocation, farmKey, visibleKey, compact])
+  }, [farmLocation, farmKey, visibleKey, itineraryKey, compact])
 
   useEffect(() => {
     routeLayersRef.current.forEach(({ layer, color, isRoadRoute }, buyerId) => {
-      const isActive = activeBuyerIds ? activeBuyerIds.includes(buyerId) : selectedBuyerIds.includes(buyerId)
+      const isActive = itineraries?.length ? true : activeBuyerIds ? activeBuyerIds.includes(buyerId) : selectedBuyerIds.includes(buyerId)
       layer.setStyle({
         color,
         weight: isActive ? 5 : 3,
@@ -181,12 +195,12 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
       const isActive = activeBuyerIds ? activeBuyerIds.includes(buyerId) : selectedBuyerIds.includes(buyerId)
       marker.setStyle({ radius: isActive ? 10 : 8, fillOpacity: isActive ? 1 : 0.72 })
     })
-  }, [selectedBuyerIds, activeBuyerIds])
+  }, [selectedBuyerIds, activeBuyerIds, itineraryKey])
 
   return (
     <div className={`route-map real-route-map ${compact ? 'is-compact' : ''}`} aria-label="Интерактивная карта маршрутов доставки OpenStreetMap">
       <div ref={containerRef} className="leaflet-host" />
-      <div className="map-legend" role="status"><span>{tilesUnavailable ? 'Подложка недоступна. Показана схема точек. ' : ''}Пунктир — условные линии; сплошные — дороги OSRM.</span></div>
+      <div className="map-legend" role="status"><span>{tilesUnavailable ? 'Подложка недоступна. Показана схема точек. ' : ''}Пунктир — условная последовательность рейса; сплошная линия — визуализация OSRM.</span></div>
     </div>
   )
 }

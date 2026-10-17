@@ -51,15 +51,6 @@ def _selected_buyers_data(data: dict, selected_buyers: list[str]) -> dict:
         filtered["prices"][product] = {
             buyer: data["prices"][product][buyer] for buyer in filtered["buyers"]
         }
-    for vehicle_id in data["vehicles"]:
-        filtered["delivery_time"][vehicle_id] = {
-            buyer: data["delivery_time"][vehicle_id][buyer]
-            for buyer in filtered["buyers"]
-        }
-        filtered["delivery_cost"][vehicle_id] = {
-            buyer: data["delivery_cost"][vehicle_id][buyer]
-            for buyer in filtered["buyers"]
-        }
     filtered["buyer_info"] = {
         buyer: data.get("buyer_info", {}).get(buyer, {})
         for buyer in filtered["buyers"]
@@ -99,7 +90,7 @@ def compare_routes(payload: CompareRoutesRequest) -> dict:
                         if vehicle_id in used_vehicles
                     ],
                     "total_delivery_time": round(
-                        sum(route["delivery_time"] for route in result["route_metrics"]),
+                        sum(route["total_time"] for route in result["itineraries"]),
                         6,
                     ),
                 }

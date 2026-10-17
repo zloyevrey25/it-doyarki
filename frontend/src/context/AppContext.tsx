@@ -51,7 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [calculatedRequest, setCalculatedRequest] = useState<OptimizeRequest | null>(null)
   const [previousPlan, setPreviousPlan] = useState<OptimizationResult | null>(null)
   const [dataNotice, setDataNotice] = useState('')
-  const stale = !!calculatedRequest && JSON.stringify(buildOptimizeRequest(products, vehicles, farmLocation, buyers)) !== JSON.stringify(calculatedRequest)
+  const stale = !!calculatedRequest && JSON.stringify(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers)) !== JSON.stringify(calculatedRequest)
   const acceptCalculation = (result: OptimizationResult, request: OptimizeRequest, reset: boolean) => {
     const changed = JSON.stringify(request) !== JSON.stringify(calculatedRequest)
     if (reset) setPreviousPlan(null)

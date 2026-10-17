@@ -6,6 +6,7 @@ from typing import Any
 
 BASE_DATA: dict[str, Any] = {
     "farm_location": "Республика Татарстан",
+    "farm_coordinates": [55.6493585, 49.3054794],
     "products": ["strawberry", "tomato", "cucumber"],
     "buyers": ["buyer_1", "buyer_2", "buyer_3", "buyer_4", "buyer_5"],
     "stock": {
@@ -66,6 +67,10 @@ BASE_DATA: dict[str, Any] = {
             "available": True,
             "model": "Mercedes-Benz Atego",
             "plate_number": "В456МТ 116",
+            "speed_kmh": 70,
+            "cost_per_km": 0.7,
+            "route_base_cost": 5,
+            "refrigeration_hours": 0,
         },
         "truck_2": {
             "capacity": 90,
@@ -73,6 +78,10 @@ BASE_DATA: dict[str, Any] = {
             "available": True,
             "model": "ГАЗон Next",
             "plate_number": "А123ВС 116",
+            "speed_kmh": 68,
+            "cost_per_km": 0.65,
+            "route_base_cost": 5,
+            "refrigeration_hours": 8,
         },
         "truck_3": {
             "capacity": 80,
@@ -80,65 +89,23 @@ BASE_DATA: dict[str, Any] = {
             "available": True,
             "model": "Isuzu NPR",
             "plate_number": "Е789КХ 116",
+            "speed_kmh": 66,
+            "cost_per_km": 0.6,
+            "route_base_cost": 5,
+            "refrigeration_hours": 12,
         },
     },
     "buyer_info": {
-        "buyer_1": {"name": "СеверМаркет", "city": "Казань", "distance_km": 120},
-        "buyer_2": {"name": "ВолгаФуд", "city": "Зеленодольск", "distance_km": 85},
-        "buyer_3": {"name": "ФрешОпт", "city": "Чистополь", "distance_km": 145},
-        "buyer_4": {"name": "АгроСбыт", "city": "Елабуга", "distance_km": 190},
-        "buyer_5": {"name": "ПродуктСити", "city": "Иннополис", "distance_km": 105},
+        "buyer_1": {"name": "СеверМаркет", "city": "Казань", "distance_km": 25, "coordinates": [55.7944, 49.1110]},
+        "buyer_2": {"name": "ВолгаФуд", "city": "Ульяновск", "distance_km": 170, "coordinates": [54.3142, 48.4031]},
+        "buyer_3": {"name": "ФрешОпт", "city": "Чебоксары", "distance_km": 140, "coordinates": [56.1439, 47.2489]},
+        "buyer_4": {"name": "АгроСбыт", "city": "Самара", "distance_km": 340, "coordinates": [53.1959, 50.1002]},
+        "buyer_5": {"name": "ПродуктСити", "city": "Ижевск", "distance_km": 380, "coordinates": [56.8527, 53.2115]},
     },
     "max_delivery_time": {
         "strawberry": 3,
         "tomato": 6,
         "cucumber": 8,
-    },
-    "delivery_time": {
-        "truck_1": {
-            "buyer_1": 1,
-            "buyer_2": 2,
-            "buyer_3": 3,
-            "buyer_4": 4,
-            "buyer_5": 2.5,
-        },
-        "truck_2": {
-            "buyer_1": 2,
-            "buyer_2": 3,
-            "buyer_3": 4,
-            "buyer_4": 5,
-            "buyer_5": 6,
-        },
-        "truck_3": {
-            "buyer_1": 3,
-            "buyer_2": 4,
-            "buyer_3": 5,
-            "buyer_4": 6,
-            "buyer_5": 7,
-        },
-    },
-    "delivery_cost": {
-        "truck_1": {
-            "buyer_1": 0.20,
-            "buyer_2": 0.25,
-            "buyer_3": 0.30,
-            "buyer_4": 0.35,
-            "buyer_5": 0.40,
-        },
-        "truck_2": {
-            "buyer_1": 0.15,
-            "buyer_2": 0.20,
-            "buyer_3": 0.25,
-            "buyer_4": 0.30,
-            "buyer_5": 0.35,
-        },
-        "truck_3": {
-            "buyer_1": 0.10,
-            "buyer_2": 0.15,
-            "buyer_3": 0.20,
-            "buyer_4": 0.25,
-            "buyer_5": 0.30,
-        },
     },
 }
 

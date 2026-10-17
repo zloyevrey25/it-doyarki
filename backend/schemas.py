@@ -1,16 +1,18 @@
 """Pydantic-схемы HTTP API оптимизатора."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class VehicleInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     capacity: float = Field(ge=0, allow_inf_nan=False)
     cost: float = Field(ge=0, allow_inf_nan=False)
     available: bool
+    speed_kmh: float = Field(gt=0, allow_inf_nan=False)
+    cost_per_km: float = Field(ge=0, allow_inf_nan=False)
+    route_base_cost: float = Field(default=0, ge=0, allow_inf_nan=False)
     model: str = ""
     plate_number: str = ""
     refrigeration_hours: float = Field(default=0, ge=0, allow_inf_nan=False)
@@ -18,15 +20,14 @@ class VehicleInput(BaseModel):
 
 class BuyerInfoInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     name: str
     city: str
     distance_km: float = Field(ge=0, allow_inf_nan=False)
+    coordinates: Tuple[float, float]
 
 
 class OptimizeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     products: List[str] = Field(min_length=1)
     buyers: List[str] = Field(min_length=1)
     stock: Dict[str, float]
@@ -34,67 +35,24 @@ class OptimizeRequest(BaseModel):
     prices: Dict[str, Dict[str, float]]
     vehicles: Dict[str, VehicleInput] = Field(min_length=1)
     max_delivery_time: Dict[str, float]
-    delivery_time: Dict[str, Dict[str, float]]
-    delivery_cost: Dict[str, Dict[str, float]]  # стоимость отдельного рейса
     farm_location: Optional[str] = None
-    buyer_info: Dict[str, BuyerInfoInput] = Field(default_factory=dict)
+    farm_coordinates: Tuple[float, float]
+    buyer_info: Dict[str, BuyerInfoInput]
 
     @model_validator(mode="after")
     def validate_related_keys_and_values(self):
         if any(not item.strip() for item in self.products + self.buyers):
             raise ValueError("Идентификаторы не должны быть пустыми")
-        if len(set(self.products)) != len(self.products):
-            raise ValueError("Идентификаторы продуктов должны быть уникальными")
-        if len(set(self.buyers)) != len(self.buyers):
-            raise ValueError("Идентификаторы покупателей должны быть уникальными")
-        if not set(self.buyer_info).issubset(set(self.buyers)):
-            raise ValueError("buyer_info содержит неизвестного покупателя")
-
-        product_keys = set(self.products)
-        buyer_keys = set(self.buyers)
-        if set(self.stock) != product_keys:
-            raise ValueError("stock должен содержать все и только указанные продукты")
-        if set(self.demand) != product_keys:
-            raise ValueError("demand должен содержать все и только указанные продукты")
-        if set(self.prices) != product_keys:
-            raise ValueError("prices должен содержать все и только указанные продукты")
-        if set(self.max_delivery_time) != product_keys:
-            raise ValueError(
-                "max_delivery_time должен содержать все и только указанные продукты"
-            )
-
-        vehicle_keys = set(self.vehicles)
-        if set(self.delivery_time) != vehicle_keys:
-            raise ValueError("delivery_time должен содержать все и только указанные машины")
-        if set(self.delivery_cost) != vehicle_keys:
-            raise ValueError("delivery_cost должен содержать все и только указанные машины")
-
+        if len(set(self.products)) != len(self.products) or len(set(self.buyers)) != len(self.buyers):
+            raise ValueError("Идентификаторы продуктов и покупателей должны быть уникальными")
+        products, buyers = set(self.products), set(self.buyers)
+        if any(set(getattr(self, field)) != products for field in ("stock", "demand", "prices", "max_delivery_time")):
+            raise ValueError("Поля продуктов должны содержать все и только указанные продукты")
+        if set(self.buyer_info) != buyers:
+            raise ValueError("buyer_info должен содержать всех покупателей")
         for product in self.products:
-            if set(self.demand[product]) != buyer_keys:
-                raise ValueError(f"demand.{product} должен содержать всех покупателей")
-            if set(self.prices[product]) != buyer_keys:
-                raise ValueError(f"prices.{product} должен содержать всех покупателей")
-
-        for vehicle_id in self.vehicles:
-            if set(self.delivery_time[vehicle_id]) != buyer_keys:
-                raise ValueError(
-                    f"delivery_time.{vehicle_id} должен содержать всех покупателей"
-                )
-            if set(self.delivery_cost[vehicle_id]) != buyer_keys:
-                raise ValueError(
-                    f"delivery_cost.{vehicle_id} должен содержать всех покупателей"
-                )
-
-        numeric_values = list(self.stock.values()) + list(self.max_delivery_time.values())
-        for product in self.products:
-            numeric_values.extend(self.demand[product].values())
-            numeric_values.extend(self.prices[product].values())
-        for vehicle_id in self.vehicles:
-            numeric_values.extend(self.delivery_time[vehicle_id].values())
-            numeric_values.extend(self.delivery_cost[vehicle_id].values())
-        if any(value < 0 for value in numeric_values):
-            raise ValueError("Числовые параметры не могут быть отрицательными")
-
+            if set(self.demand[product]) != buyers or set(self.prices[product]) != buyers:
+                raise ValueError(f"demand.{product} и prices.{product} должны содержать всех покупателей")
         return self
 
 
@@ -102,8 +60,45 @@ class ShipmentOutput(BaseModel):
     product: str
     buyer: str
     vehicle: str
+    itinerary_id: str
+    stop_order: int
+    quantity: float
+    arrival_time: float
+    delivery_time_margin: float
+    spoilage_risk: str
+
+
+class UnloadOutput(BaseModel):
+    product: str
     quantity: float
     delivery_time_margin: float
+    spoilage_risk: str
+
+
+class ItineraryStopOutput(BaseModel):
+    order: int
+    buyer: str
+    buyer_name: str
+    city: str
+    coordinates: Tuple[float, float]
+    leg_distance_km: float
+    distance_km: float
+    arrival_time: float
+    unloads: List[UnloadOutput]
+
+
+class ItineraryOutput(BaseModel):
+    id: str
+    vehicle: str
+    ordered_stops: List[ItineraryStopOutput]
+    total_distance_km: float
+    total_time: float
+    total_load_kg: float
+    itinerary_cost: float
+    fixed_vehicle_cost: float
+    revenue: float
+    contribution_before_fixed_cost: float
+    refrigeration_hours: float
     spoilage_risk: str
 
 
@@ -142,10 +137,11 @@ class VehicleMetricOutput(BaseModel):
 
 
 class RouteMetricOutput(BaseModel):
+    itinerary_id: str
     vehicle: str
-    buyer: str
-    buyer_name: str
-    city: str
+    buyers: List[str]
+    buyer_names: List[str]
+    cities: List[str]
     distance_km: float
     delivery_time: float
     route_cost: float
@@ -156,6 +152,7 @@ class RouteMetricOutput(BaseModel):
 
 class OptimizeResponse(BaseModel):
     shipments: List[ShipmentOutput]
+    itineraries: List[ItineraryOutput]
     revenue: float
     transport_cost: float
     profit: float

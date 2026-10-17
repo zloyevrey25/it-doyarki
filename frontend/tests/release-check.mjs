@@ -7,23 +7,32 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:5173'
 function checkPlan(request, plan) {
   const close = (a, b) => assert.ok(Math.abs(a - b) < .02, `${a} != ${b}`)
   let revenue = 0
-  const loads = {}, stocks = {}, demands = {}, routes = new Set()
+  const loads = {}, stocks = {}, demands = {}
+  const vehicles = new Set()
+  const itineraryIds = new Set(plan.itineraries.map((item) => item.id))
+  for (const itinerary of plan.itineraries) {
+    assert.ok(!vehicles.has(itinerary.vehicle), `vehicle ${itinerary.vehicle} has multiple itineraries`)
+    vehicles.add(itinerary.vehicle)
+    assert.ok(request.vehicles[itinerary.vehicle].available)
+    assert.ok(itinerary.ordered_stops.length === 1 || itinerary.ordered_stops.length === 2)
+    assert.deepEqual(itinerary.ordered_stops.map((stop) => stop.order), itinerary.ordered_stops.map((_, index) => index + 1))
+    close(itinerary.total_load_kg, itinerary.ordered_stops.flatMap((stop) => stop.unloads).reduce((sum, row) => sum + row.quantity, 0))
+  }
   for (const s of plan.shipments) {
     assert.ok(request.vehicles[s.vehicle].available)
+    assert.ok(itineraryIds.has(s.itinerary_id))
     assert.ok(s.quantity >= 0)
-    assert.ok(request.delivery_time[s.vehicle][s.buyer] <= request.max_delivery_time[s.product] + request.vehicles[s.vehicle].refrigeration_hours)
-    close(s.delivery_time_margin, request.max_delivery_time[s.product] + request.vehicles[s.vehicle].refrigeration_hours - request.delivery_time[s.vehicle][s.buyer])
+    assert.ok(s.arrival_time <= request.max_delivery_time[s.product] + request.vehicles[s.vehicle].refrigeration_hours)
+    close(s.delivery_time_margin, request.max_delivery_time[s.product] + request.vehicles[s.vehicle].refrigeration_hours - s.arrival_time)
     revenue += s.quantity * request.prices[s.product][s.buyer]
     loads[s.vehicle] = (loads[s.vehicle] || 0) + s.quantity
     stocks[s.product] = (stocks[s.product] || 0) + s.quantity
     const key = `${s.product}|${s.buyer}`
     demands[key] = (demands[key] || 0) + s.quantity
     assert.ok(demands[key] <= request.demand[s.product][s.buyer] + .001)
-    routes.add(`${s.vehicle}|${s.buyer}`)
   }
-  let cost = 0
-  for (const [id, load] of Object.entries(loads)) { assert.ok(load <= request.vehicles[id].capacity + .001); cost += request.vehicles[id].cost }
-  for (const key of routes) { const [v, b] = key.split('|'); cost += request.delivery_cost[v][b] }
+  for (const [id, load] of Object.entries(loads)) assert.ok(load <= request.vehicles[id].capacity + .001)
+  const cost = plan.itineraries.reduce((sum, item) => sum + item.itinerary_cost + item.fixed_vehicle_cost, 0)
   for (const id of request.products) { assert.ok((stocks[id] || 0) <= request.stock[id] + .001); close(plan.leftovers[id], request.stock[id] - (stocks[id] || 0)) }
   close(plan.revenue, revenue); close(plan.transport_cost, cost); close(plan.profit, revenue - cost)
 }
@@ -90,6 +99,9 @@ try {
     return { request, plan }
   }
   const original = await calculate(page.getByRole('button', { name: 'Найти покупателей и маршруты' }))
+  const originalLeftovers = Object.values(original.plan.leftovers).reduce((sum, value) => sum + value, 0)
+  const originalStock = Object.values(original.request.stock).reduce((sum, value) => sum + value, 0)
+  assert.ok(originalLeftovers > 0 && originalLeftovers < originalStock * .1, 'demo must have a small natural leftover')
   heights.buyers = await page.evaluate(() => document.documentElement.scrollHeight)
   assert.equal(original.request.buyers.length, 5)
   const buyerColumns = await page.locator('.buyer-list').evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length)
@@ -125,9 +137,10 @@ try {
   assert.equal(comparison.status(), 200)
   const solutions = await comparison.json()
   for (const solution of solutions.solutions) checkPlan(comparison.request().postDataJSON(), solution)
-  const buyersByVehicle = new Map()
-  for (const route of solutions.recommended_solution.route_metrics) buyersByVehicle.set(route.vehicle, new Set([...(buyersByVehicle.get(route.vehicle) || []), route.buyer]))
-  assert.ok([...buyersByVehicle.values()].some((buyers) => buyers.size >= 2), 'example with one vehicle and two buyers')
+  assert.ok(solutions.recommended_solution.itineraries.every((item) => item.ordered_stops.length <= 2))
+  assert.equal(new Set(solutions.recommended_solution.itineraries.map((item) => item.vehicle)).size, solutions.recommended_solution.itineraries.length)
+  const patterns = solutions.solutions.map((solution) => [...solution.itineraries].map((item) => `${item.vehicle}|${item.id}`).sort().join(','))
+  assert.equal(new Set(patterns).size, patterns.length, 'alternatives must differ by itineraries')
   await page.getByRole('heading', { name: 'Рекомендованный план', exact: true }).waitFor()
   await page.getByText('До фикс. затрат', { exact: false }).first().waitFor()
   await page.waitForTimeout(350)
@@ -160,10 +173,10 @@ try {
     const buyers = createNearbyBuyers([55.6493585, 49.3054794])
     const edited = structuredClone(buyers); edited[0].demands[0].pricePerKg = 999
     const preserved = preservePrices([...buyers].reverse(), edited)
-    const request = buildOptimizeRequest(PRODUCT_CATALOG, DEFAULT_VEHICLES, 'farm', buyers)
+    const request = buildOptimizeRequest(PRODUCT_CATALOG, DEFAULT_VEHICLES, 'farm', [55.6493585,49.3054794], buyers)
     const invalid = [-1, NaN, Infinity].every((price) => { request.prices.strawberry.buyer_1 = price; return !validPrices(request) })
-    const recommended = { shipments: [{ product:'p', buyer:'a', vehicle:'v1', quantity:10, delivery_time_margin:3, spoilage_risk:'low' }, { product:'p', buyer:'a', vehicle:'v2', quantity:20, delivery_time_margin:1, spoilage_risk:'high' }], route_metrics:[{ buyer:'a', vehicle:'v1', route_profit:100, delivery_time:2 }, { buyer:'a', vehicle:'v2', route_profit:200, delivery_time:4 }] }
-    const alternative = { shipments:[{ product:'p', buyer:'b', vehicle:'v3', quantity:999, delivery_time_margin:99, spoilage_risk:'low' }], route_metrics:[{buyer:'a',vehicle:'v3',route_profit:9999,delivery_time:99}] }
+    const recommended = { shipments: [{ product:'p', buyer:'a', vehicle:'v1', itinerary_id:'i1', stop_order:1, arrival_time:2, quantity:10, delivery_time_margin:3, spoilage_risk:'low' }, { product:'p', buyer:'a', vehicle:'v2', itinerary_id:'i2', stop_order:1, arrival_time:4, quantity:20, delivery_time_margin:1, spoilage_risk:'high' }], itineraries:[{id:'i1',vehicle:'v1',ordered_stops:[{buyer:'a',arrival_time:2}],contribution_before_fixed_cost:100},{id:'i2',vehicle:'v2',ordered_stops:[{buyer:'a',arrival_time:4}],contribution_before_fixed_cost:200}] }
+    const alternative = { shipments:[{ product:'p', buyer:'b', vehicle:'v3', itinerary_id:'i3', stop_order:1, arrival_time:1, quantity:999, delivery_time_margin:99, spoilage_risk:'low' }], itineraries:[{id:'i3',vehicle:'v3',ordered_stops:[{buyer:'b',arrival_time:1}],contribution_before_fixed_cost:9999}] }
     const comparison = { recommended_solution: recommended, solutions:[recommended, alternative] }
     return { cases: [...cases], invalid, preserved: preserved.find((b) => b.city === edited[0].city).demands[0].pricePerKg, aggregate:buyerPlan(comparison.recommended_solution,'a'), absent:buyerPlan(comparison.recommended_solution,'b'), unchanged:shipmentChanges(recommended,recommended).length, fetchJson: typeof fetchJson }
   })

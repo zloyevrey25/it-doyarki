@@ -7,7 +7,6 @@ import type { Buyer, ComparisonSolution, Product, Vehicle } from '../types'
 import { money, number, riskLabel } from '../utils'
 import './comparison-step.css'
 import { PlanChanges } from '../components/PlanChanges'
-import { buyerPlan } from '../data/buyerPlan'
 import { productEmoji, vehicleEmoji } from '../data/emoji'
 
 const routeProfitExplanation = 'Выручка минус затраты направления. Фиксированная стоимость машины учтена один раз в итоговой прибыли.'
@@ -48,13 +47,13 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
         <div className="alternative-detail-grid">
           <div>
             <h3>Маршруты · до фикс. затрат</h3>
-            {solution.route_metrics.map((route) => {
-              const vehicle = vehicles.find((item) => item.id === route.vehicle)
+            {solution.itineraries.map((itinerary) => {
+              const vehicle = vehicles.find((item) => item.id === itinerary.vehicle)
               return (
-                <div className="alternative-route-line" key={`${route.vehicle}-${route.buyer}`}>
-                  <span><b>{route.buyer_name}</b><small><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(route.vehicle)}</span>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч{vehicle?.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</small></span>
-                  <span>{number.format(route.shipped_kg)} кг</span>
-                  <strong aria-label={`До фикс. затрат: ${money.format(route.route_profit)}`}>{money.format(route.route_profit)}</strong>
+                <div className="alternative-route-line" key={itinerary.id + itinerary.vehicle}>
+                  <span><b>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</b><small><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle} · {number.format(itinerary.total_time)} ч{itinerary.refrigeration_hours ? ` · ❄ +${itinerary.refrigeration_hours} ч` : ''}</small></span>
+                  <span>{number.format(itinerary.total_load_kg)} кг</span>
+                  <strong aria-label={`До фикс. затрат: ${money.format(itinerary.contribution_before_fixed_cost)}`}>{money.format(itinerary.contribution_before_fixed_cost)}</strong>
                 </div>
               )
             })}
@@ -79,13 +78,13 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
 }
 
 export function ComparisonStep() {
-  const { products, vehicles, farmLocation, buyers, selectedBuyers, comparison, setComparison, status, setStatus, error, setError } = useApp()
+  const { products, vehicles, farmLocation, farmCoordinates, buyers, selectedBuyers, comparison, setComparison, status, setStatus, error, setError } = useApp()
 
   const retry = async () => {
     setStatus('loading')
     setError('')
     try {
-      const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, buyers), selectedBuyers, 3)
+      const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers), selectedBuyers, 3)
       setComparison(result)
       setStatus(result.solutions.length ? 'success' : 'empty')
     } catch (requestError) {
@@ -134,16 +133,11 @@ export function ComparisonStep() {
       <section className="comparison-section compact-comparison">
         <div className="section-title compact-section-title"><div><h2>Направления рекомендованного плана</h2><p>До фикс. затрат <RouteProfitHint /></p></div></div>
         <div className="compact-route-columns">
-          {selectedBuyers.map((buyerId) => {
-            const buyer = buyers.find((item) => item.id === buyerId)
-            if (!buyer) return null
-            const direction = buyerPlan(best, buyerId)
-            if (!direction.included) return <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article>
-            return <details className="compact-route-card" key={buyerId}>
-              <summary><span><h3>{buyer.name}</h3><small>{number.format(direction.weight)} кг · {money.format(direction.contribution)} · <b className={`risk risk-${direction.risk}`}>{riskLabel(direction.risk!)}</b></small></span><i aria-hidden="true">⌄</i></summary>
-              <div className="route-more"><span><small>Машины</small><b className="vehicle-label-list">{direction.vehicles.map((id, index) => { const vehicle = vehicles.find((item) => item.id === id); return <span key={id}>{index > 0 && '; '}<span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(id)}</span>{vehicle?.plateNumber ?? id}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span> })}</b></span><span><small>Время доставки</small><b>{direction.times.map((time) => `${number.format(time)} ч`).join(' / ')}</b></span><span><small>Мин. запас времени</small><b>{direction.margin === null ? '—' : `${number.format(direction.margin)} ч`}</b></span></div>
-            </details>
-          })}
+          {best.itineraries.map((itinerary) => { const vehicle = vehicles.find((item) => item.id === itinerary.vehicle); const margins = itinerary.ordered_stops.flatMap((stop) => stop.unloads.map((unload) => unload.delivery_time_margin)); return <details className="compact-route-card" key={`${itinerary.vehicle}-${itinerary.id}`}>
+            <summary><span><h3>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</h3><small>{number.format(itinerary.total_load_kg)} кг · {money.format(itinerary.contribution_before_fixed_cost)} · <b className={`risk risk-${itinerary.spoilage_risk}`}>{riskLabel(itinerary.spoilage_risk)}</b></small></span><i aria-hidden="true">⌄</i></summary>
+            <div className="route-more"><span><small>Машина</small><b className="vehicle-label-list"><span><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span></b></span><span><small>Прибытие</small><b>{itinerary.ordered_stops.map((stop) => `${stop.city}: ${number.format(stop.arrival_time)} ч`).join(' · ')}</b></span><span><small>Мин. запас времени</small><b>{margins.length ? `${number.format(Math.min(...margins))} ч` : '—'}</b></span></div>
+          </details> })}
+          {selectedBuyers.filter((buyerId) => !best.buyers_used.includes(buyerId)).map((buyerId) => { const buyer = buyers.find((item) => item.id === buyerId); return buyer ? <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article> : null })}
         </div>
       </section>
 
@@ -160,7 +154,7 @@ export function ComparisonStep() {
 
       <section className="final-map compact-final-map">
         <div className="section-title compact-section-title"><div><h2>Карта итогового плана</h2><p>Только маршруты из рекомендованной комбинации</p></div></div>
-        <RouteMap selectedBuyerIds={best.buyers_used} activeBuyerIds={best.buyers_used} compact />
+        <RouteMap selectedBuyerIds={best.buyers_used} activeBuyerIds={best.buyers_used} itineraries={best.itineraries} compact />
       </section>
     </main>
   )

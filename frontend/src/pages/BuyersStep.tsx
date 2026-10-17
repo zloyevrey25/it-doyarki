@@ -10,14 +10,14 @@ import { productEmoji, vehicleEmoji } from '../data/emoji'
 import { money, number } from '../utils'
 
 export function BuyersStep() {
-  const { products, vehicles, farmLocation, buyers, optimization, selectedBuyers, setSelectedBuyers, setComparison, setStep, status, setStatus, error, setError } = useApp()
+  const { products, vehicles, farmLocation, farmCoordinates, buyers, optimization, selectedBuyers, setSelectedBuyers, setComparison, setStep, status, setStatus, error, setError } = useApp()
   const toggleBuyer = (id: string) => setSelectedBuyers((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id])
   const { setBuyers, acceptCalculation, stale, dataNotice } = useApp()
   const busy = useRef(false)
   const confirmationDialog = useRef<HTMLDialogElement>(null)
   const [editingBuyerId, setEditingBuyerId] = useState<string | null>(null)
   const [confirmAllOpen, setConfirmAllOpen] = useState(false)
-  const request = buildOptimizeRequest(products, vehicles, farmLocation, buyers)
+  const request = buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers)
   const pricesValid = validPrices(request)
   const availableVehicleCount = vehicles.filter((vehicle) => vehicle.available).length
 
@@ -40,7 +40,7 @@ export function BuyersStep() {
     if (!buyerIds.length || stale || !pricesValid || busy.current) return
     busy.current = true
     setStatus('loading'); setError('')
-    try { const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, buyers), buyerIds, 3); setComparison(result); setStatus(result.solutions.length ? 'success' : 'empty'); setStep(3) }
+    try { const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers), buyerIds, 3); setComparison(result); setStatus(result.solutions.length ? 'success' : 'empty'); setStep(3) }
     catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Ошибка backend.'); setStatus('error') }
     finally { busy.current = false }
   }

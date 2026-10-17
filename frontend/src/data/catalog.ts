@@ -14,13 +14,13 @@ export const PRODUCT_CATALOG: Product[] = [
 ]
 
 export const DEFAULT_VEHICLES: Vehicle[] = [
-  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b', refrigerationHours: 0 },
-  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f', refrigerationHours: 8 },
-  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438', refrigerationHours: 12 },
-  { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792', refrigerationHours: 0 },
+  { id: 'truck_1', plateNumber: 'А123ВС', model: 'ГАЗель Next', capacityKg: 1500, fixedCost: 1800, available: true, color: '#3d7a5b', refrigerationHours: 0, speedKmh: 70, costPerKm: 7.2, routeBaseCost: 900 },
+  { id: 'truck_2', plateNumber: 'В456МТ', model: 'Isuzu NPR 75', capacityKg: 3000, fixedCost: 2600, available: true, color: '#4d6f8f', refrigerationHours: 8, speedKmh: 68, costPerKm: 8.35, routeBaseCost: 900 },
+  { id: 'truck_3', plateNumber: 'С789КН', model: 'Mercedes-Benz Atego', capacityKg: 5000, fixedCost: 3900, available: true, color: '#c88438', refrigerationHours: 12, speedKmh: 66, costPerKm: 9.5, routeBaseCost: 900 },
+  { id: 'truck_4', plateNumber: 'О321РТ', model: 'Ford Transit', capacityKg: 1500, fixedCost: 1700, available: false, color: '#7d8792', refrigerationHours: 0, speedKmh: 65, costPerKm: 10.65, routeBaseCost: 900 },
 ]
 
-export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], farmLocation: string, buyers: Buyer[]): OptimizeRequest {
+export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], farmLocation: string, farmCoordinates: [number, number], buyers: Buyer[]): OptimizeRequest {
   const selectedProducts = products.filter((product) => product.selected)
   const productIds = selectedProducts.map((product) => product.id)
   const buyerIds = buyers.map((buyer) => buyer.id)
@@ -43,9 +43,7 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
   })
 
   const vehiclePayload: OptimizeRequest['vehicles'] = {}
-  const deliveryTime: OptimizeRequest['delivery_time'] = {}
-  const deliveryCost: OptimizeRequest['delivery_cost'] = {}
-  vehicles.forEach((vehicle, vehicleIndex) => {
+  vehicles.forEach((vehicle) => {
     vehiclePayload[vehicle.id] = {
       capacity: vehicle.capacityKg,
       cost: vehicle.fixedCost,
@@ -53,17 +51,15 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
       model: vehicle.model,
       plate_number: vehicle.plateNumber,
       refrigeration_hours: vehicle.refrigerationHours,
+      speed_kmh: vehicle.speedKmh,
+      cost_per_km: vehicle.costPerKm,
+      route_base_cost: vehicle.routeBaseCost,
     }
-    deliveryTime[vehicle.id] = {}
-    deliveryCost[vehicle.id] = {}
-    buyers.forEach((buyer) => {
-      deliveryTime[vehicle.id][buyer.id] = Number((buyer.deliveryTime + vehicleIndex * 0.15).toFixed(2))
-      deliveryCost[vehicle.id][buyer.id] = Math.round(900 + buyer.distanceKm * (7.2 + vehicleIndex * 1.15))
-    })
   })
 
   return {
     farm_location: farmLocation,
+    farm_coordinates: farmCoordinates,
     products: productIds,
     buyers: buyerIds,
     stock,
@@ -71,12 +67,11 @@ export function buildOptimizeRequest(products: Product[], vehicles: Vehicle[], f
     prices,
     vehicles: vehiclePayload,
     max_delivery_time: maxDeliveryTime,
-    delivery_time: deliveryTime,
-    delivery_cost: deliveryCost,
     buyer_info: Object.fromEntries(buyers.map((buyer) => [buyer.id, {
       name: buyer.name,
       city: buyer.city,
       distance_km: buyer.distanceKm,
+      coordinates: buyer.coordinates,
     }])),
   }
 }

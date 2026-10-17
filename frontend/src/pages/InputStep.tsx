@@ -73,7 +73,7 @@ export function InputStep() {
       {error && <p className="request-alert" role="alert">{error}</p>}
       {offerDemo && <button className="button button-secondary" onClick={() => { setFarmLocation(DEFAULT_FARM_LOCATION); setError(''); setOfferDemo(false) }}>Выбрать демонстрационный адрес: Большие Кабаны</button>}
       <fieldset disabled={status === 'loading'} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-      <div className="page-heading"><span className="eyebrow">Этап 1 из 3</span><h1>Исходные данные</h1><p>Укажите урожай, местоположение и транспорт — остальное рассчитает оптимизатор.</p></div>
+      <div className="page-heading"><span className="eyebrow">Этап 1 из 4</span><h1>Исходные данные</h1><p>Укажите урожай, местоположение и транспорт — остальное рассчитает оптимизатор.</p></div>
 
       <section className="panel location-panel" aria-labelledby="location-title">
         <small>Компании демонстрационные. Охват ограничен локальным каталогом городов: нужны 4–5 покупателей в расчётном радиусе 700 км.</small>

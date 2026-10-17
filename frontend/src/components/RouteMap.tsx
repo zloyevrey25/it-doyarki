@@ -6,6 +6,7 @@ import { fetchJson } from '../api/network'
 import { useApp } from '../context/AppContext'
 import { ROUTE_COLORS } from '../data/catalog'
 import type { Itinerary } from '../types'
+import { duration } from '../utils'
 
 interface Props {
   selectedBuyerIds: string[]
@@ -133,7 +134,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
           fillOpacity: isActive ? 1 : 0.72,
         }).addTo(map)
         marker.bindTooltip(textBlock(buyer.name, buyer.address), { direction: 'top', offset: [0, -8], className: 'real-map-tooltip' })
-        marker.bindPopup(textBlock(`${buyer.name} · ${buyer.city}`, `${buyer.address} · ${buyer.distanceKm} км · ≈ ${buyer.deliveryTime} ч`))
+        marker.bindPopup(textBlock(`${buyer.name} · ${buyer.city}`, `${buyer.address} · ${buyer.distanceKm} км · ≈ ${duration(buyer.deliveryTime)}`))
         if (toggleBuyerRef.current) marker.on('click', () => toggleBuyerRef.current?.(buyer.id))
         buyerMarkersRef.current.set(buyer.id, marker)
         pointLayersRef.current.push(marker)

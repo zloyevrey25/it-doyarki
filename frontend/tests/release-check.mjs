@@ -160,6 +160,7 @@ try {
     const { createNearbyBuyers, requireBuyerCoverage } = await import('/src/data/nearbyBuyers.ts')
     const { fetchJson } = await import('/src/api/network.ts')
     const { buyerPlan } = await import('/src/data/buyerPlan.ts')
+    const { duration } = await import('/src/utils.ts')
     const { preservePrices, validPrices, shipmentChanges } = await import('/src/data/planChanges.ts')
     const { buildOptimizeRequest, PRODUCT_CATALOG, DEFAULT_VEHICLES } = await import('/src/data/catalog.ts')
     const cases = new Map()
@@ -178,7 +179,7 @@ try {
     const recommended = { shipments: [{ product:'p', buyer:'a', vehicle:'v1', itinerary_id:'i1', stop_order:1, arrival_time:2, quantity:10, delivery_time_margin:3, spoilage_risk:'low' }, { product:'p', buyer:'a', vehicle:'v2', itinerary_id:'i2', stop_order:1, arrival_time:4, quantity:20, delivery_time_margin:1, spoilage_risk:'high' }], itineraries:[{id:'i1',vehicle:'v1',ordered_stops:[{buyer:'a',arrival_time:2}],contribution_before_fixed_cost:100},{id:'i2',vehicle:'v2',ordered_stops:[{buyer:'a',arrival_time:4}],contribution_before_fixed_cost:200}] }
     const alternative = { shipments:[{ product:'p', buyer:'b', vehicle:'v3', itinerary_id:'i3', stop_order:1, arrival_time:1, quantity:999, delivery_time_margin:99, spoilage_risk:'low' }], itineraries:[{id:'i3',vehicle:'v3',ordered_stops:[{buyer:'b',arrival_time:1}],contribution_before_fixed_cost:9999}] }
     const comparison = { recommended_solution: recommended, solutions:[recommended, alternative] }
-    return { cases: [...cases], invalid, preserved: preserved.find((b) => b.city === edited[0].city).demands[0].pricePerKg, aggregate:buyerPlan(comparison.recommended_solution,'a'), absent:buyerPlan(comparison.recommended_solution,'b'), unchanged:shipmentChanges(recommended,recommended).length, fetchJson: typeof fetchJson }
+    return { cases: [...cases], invalid, preserved: preserved.find((b) => b.city === edited[0].city).demands[0].pricePerKg, aggregate:buyerPlan(comparison.recommended_solution,'a'), absent:buyerPlan(comparison.recommended_solution,'b'), unchanged:shipmentChanges(recommended,recommended).length, fetchJson: typeof fetchJson, durations:[duration(.4), duration(2.4), duration(3)] }
   })
   assert.deepEqual(unit.cases.map(([n]) => n).sort(), [0,3,4,5])
   for (const [n, c] of unit.cases) { assert.equal(c.accepted, n >= 4); assert.ok(c.unique && c.radius) }
@@ -186,6 +187,7 @@ try {
   assert.equal(unit.aggregate.weight,30); assert.equal(unit.aggregate.contribution,300); assert.equal(unit.aggregate.margin,1); assert.equal(unit.aggregate.risk,'high'); assert.equal(unit.aggregate.vehicles.length,2)
   assert.equal(unit.absent.included,false); assert.equal(unit.absent.risk,null)
   assert.equal(unit.fetchJson,'function')
+  assert.deepEqual(unit.durations,['24 мин','2 ч 24 мин','3 ч'])
   await page.route('**/__slow', async (route) => { await new Promise((resolve) => setTimeout(resolve,100)); await route.fulfill({json:{ok:true}}) })
   const timeoutKind = await page.evaluate(async () => { const { fetchJson } = await import('/src/api/network.ts'); try { await fetchJson('/__slow',{},20) } catch (error) { return error.kind } })
   assert.equal(timeoutKind,'timeout')

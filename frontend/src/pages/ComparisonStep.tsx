@@ -4,7 +4,7 @@ import { RouteMap } from '../components/RouteMap'
 import { useApp } from '../context/AppContext'
 import { buildOptimizeRequest } from '../data/catalog'
 import type { Buyer, ComparisonSolution, Product, Vehicle } from '../types'
-import { money, number, riskLabel } from '../utils'
+import { duration, money, number, riskLabel } from '../utils'
 import './comparison-step.css'
 import { PlanChanges } from '../components/PlanChanges'
 import { productEmoji, vehicleEmoji } from '../data/emoji'
@@ -51,7 +51,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
               const vehicle = vehicles.find((item) => item.id === itinerary.vehicle)
               return (
                 <div className="alternative-route-line" key={itinerary.id + itinerary.vehicle}>
-                  <span><b>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</b><small><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle} · {number.format(itinerary.total_time)} ч{itinerary.refrigeration_hours ? ` · ❄ +${itinerary.refrigeration_hours} ч` : ''}</small></span>
+                  <span><b>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</b><small><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle} · {duration(itinerary.total_time)}{itinerary.refrigeration_hours ? ` · ❄ +${itinerary.refrigeration_hours} ч` : ''}</small></span>
                   <span>{number.format(itinerary.total_load_kg)} кг</span>
                   <strong aria-label={`До фикс. затрат: ${money.format(itinerary.contribution_before_fixed_cost)}`}>{money.format(itinerary.contribution_before_fixed_cost)}</strong>
                 </div>
@@ -135,7 +135,7 @@ export function ComparisonStep() {
         <div className="compact-route-columns">
           {best.itineraries.map((itinerary) => { const vehicle = vehicles.find((item) => item.id === itinerary.vehicle); const margins = itinerary.ordered_stops.flatMap((stop) => stop.unloads.map((unload) => unload.delivery_time_margin)); return <details className="compact-route-card" key={`${itinerary.vehicle}-${itinerary.id}`}>
             <summary><span><h3>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</h3><small>{number.format(itinerary.total_load_kg)} кг · {money.format(itinerary.contribution_before_fixed_cost)} · <b className={`risk risk-${itinerary.spoilage_risk}`}>{riskLabel(itinerary.spoilage_risk)}</b></small></span><i aria-hidden="true">⌄</i></summary>
-            <div className="route-more"><span><small>Машина</small><b className="vehicle-label-list"><span><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span></b></span><span><small>Прибытие</small><b>{itinerary.ordered_stops.map((stop) => `${stop.city}: ${number.format(stop.arrival_time)} ч`).join(' · ')}</b></span><span><small>Мин. запас времени</small><b>{margins.length ? `${number.format(Math.min(...margins))} ч` : '—'}</b></span></div>
+            <div className="route-more"><span><small>Машина</small><b className="vehicle-label-list"><span><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span></b></span><span><small>Прибытие</small><b>{itinerary.ordered_stops.map((stop) => `${stop.city}: ${duration(stop.arrival_time)}`).join(' · ')}</b></span><span><small>Мин. запас времени</small><b>{margins.length ? duration(Math.min(...margins)) : '—'}</b></span></div>
           </details> })}
           {selectedBuyers.filter((buyerId) => !best.buyers_used.includes(buyerId)).map((buyerId) => { const buyer = buyers.find((item) => item.id === buyerId); return buyer ? <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article> : null })}
         </div>

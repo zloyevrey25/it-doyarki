@@ -28,7 +28,7 @@ export function BuyersStep() {
   if (!optimization) return <main className="page"><EmptyState text="Вернитесь к исходным данным и выполните расчёт." /></main>
 
   return (
-    <main className="page">
+    <main className="page page-buyers">
       <div className="page-heading heading-inline"><div><span className="eyebrow">Этап 2 из 3</span><h1>Покупатели и маршруты</h1><p>Отметьте желаемые направления — оптимизатор найдёт лучшую комбинацию.</p></div><div className="selection-counter"><b>{selectedBuyers.length}</b><span>выбрано</span></div></div>
       <section className="metric-strip" aria-label="Ключевые показатели"><article><span>Потенциальная прибыль</span><strong>{money.format(optimization.profit)}</strong></article><article><span>Возможная выручка</span><strong>{money.format(optimization.revenue)}</strong></article><article><span>Транспортные расходы</span><strong>{money.format(optimization.transport_cost)}</strong></article><article><span>Доступно машин</span><strong>{vehicles.filter((vehicle) => vehicle.available).length}</strong></article></section>
       <div className="formula-note"><b>Цель оптимизации — максимизация прибыли.</b><span>Прибыль = выручка − транспортные расходы.</span></div>

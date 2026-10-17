@@ -49,6 +49,9 @@
 }
 
 .summary-chip-list b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 5px 8px;
   border-radius: 8px;
   background: #f1f5f2;
@@ -558,6 +561,18 @@
 
 .shipment-grid .shipment-line span {
   min-width: 0;
+}
+
+.page-comparison .shipment-line > .product-emoji {
+  display: inline-block;
+  flex: 0 0 20px;
+  min-width: 20px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.vehicle-label-list > span {
+  display: inline;
 }
 
 .shipment-grid .shipment-line b,

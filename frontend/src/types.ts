@@ -1,11 +1,11 @@
-export type MascotShape = 'strawberry' | 'round' | 'cucumber' | 'carrot' | 'potato' | 'cabbage' | 'generic'
+export type MascotShape = 'strawberry' | 'blueberry' | 'round' | 'cucumber' | 'carrot' | 'potato' | 'cabbage' | 'generic'
 
 export interface Product {
   id: string
   name: string
-  category: 'Фрукты' | 'Овощи' | 'Другое'
+  category: 'Фрукты' | 'Ягоды' | 'Овощи' | 'Другое'
   selected: boolean
-  quantityKg: number
+  quantityKg: number | ''
   maxDeliveryTime: number
   color: string
   accent: string

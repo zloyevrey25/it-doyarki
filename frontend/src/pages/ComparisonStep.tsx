@@ -1,5 +1,4 @@
 import { apiClient } from '../api/client'
-import { ProductMascot } from '../components/ProductMascot'
 import { EmptyState, ErrorState, LoadingState } from '../components/RequestState'
 import { RouteMap } from '../components/RouteMap'
 import { useApp } from '../context/AppContext'
@@ -9,6 +8,7 @@ import { money, number, riskLabel } from '../utils'
 import './comparison-step.css'
 import { PlanChanges } from '../components/PlanChanges'
 import { buyerPlan } from '../data/buyerPlan'
+import { productEmoji, vehicleEmoji } from '../data/emoji'
 
 const routeProfitExplanation = 'Выручка минус затраты направления. Фиксированная стоимость машины учтена один раз в итоговой прибыли.'
 
@@ -52,7 +52,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
               const vehicle = vehicles.find((item) => item.id === route.vehicle)
               return (
                 <div className="alternative-route-line" key={`${route.vehicle}-${route.buyer}`}>
-                  <span><b>{route.buyer_name}</b><small>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч{vehicle?.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</small></span>
+                  <span><b>{route.buyer_name}</b><small><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(route.vehicle)}</span>{route.city} · {vehicle?.plateNumber ?? route.vehicle} · {route.delivery_time} ч{vehicle?.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</small></span>
                   <span>{number.format(route.shipped_kg)} кг</span>
                   <strong aria-label={`До фикс. затрат: ${money.format(route.route_profit)}`}>{money.format(route.route_profit)}</strong>
                 </div>
@@ -66,7 +66,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
               const buyer = buyers.find((item) => item.id === shipment.buyer)
               return (
                 <div className="alternative-shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>
-                  <span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name ?? shipment.buyer}</small></span>
+                  <span><b><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(shipment.product)}</span>{product?.name ?? shipment.product}</b><small>→ {buyer?.name ?? shipment.buyer}</small></span>
                   <strong>{number.format(shipment.quantity)} кг</strong>
                 </div>
               )
@@ -111,8 +111,8 @@ export function ComparisonStep() {
 
       <section className="frozen-summary compact-summary" aria-label="Зафиксированные исходные данные">
         <div className="summary-location"><span>Ферма</span><b title={farmLocation}>{farmLocation}</b></div>
-        <div className="summary-group"><span>Урожай</span><div className="summary-chip-list">{selectedProducts.map((product) => <b key={product.id}>{product.name} · {number.format(product.quantityKg)} кг</b>)}</div></div>
-        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
+        <div className="summary-group"><span>Урожай</span><div className="summary-chip-list">{selectedProducts.map((product) => <b key={product.id}><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(product.id)}</span>{product.name} · {number.format(typeof product.quantityKg === 'number' ? product.quantityKg : 0)} кг</b>)}</div></div>
+        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(vehicle.id)}</span>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
       </section>
 
       <section className="optimal-panel compact-optimal-panel">
@@ -126,9 +126,9 @@ export function ComparisonStep() {
           <article><span>Выполнение спроса</span><strong>{number.format(best.plan_metrics.fulfillment_rate_percent)}%</strong></article>
         </div>
         <div className="shipment-summary">
-          <h3>Основные отгрузки</h3><div className="shipment-grid">{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}>{product && <ProductMascot name={product.name} color={product.color} accent={product.accent} shape={product.mascotShape} size={24}/>}<span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
+          <h3>Основные отгрузки</h3><div className="shipment-grid">{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(shipment.product)}</span><span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
         </div>
-        <div className="plan-footer"><p className="leftovers-inline"><b>Остатки:</b> {Object.entries(best.leftovers).map(([productId, value], index) => <span key={productId}>{index > 0 && ' · '}{(products.find((item) => item.id === productId)?.name ?? productId).toLocaleLowerCase('ru-RU')} {number.format(value)} кг</span>)}</p><div className="constraint-list" aria-label="Проверки ограничений"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Машины</span><span>✓ Сроки</span></div></div>
+        <div className="plan-footer"><p className="leftovers-inline"><b>Остатки:</b> {Object.entries(best.leftovers).map(([productId, value], index) => <span key={productId}>{index > 0 && ' · '}<span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(productId)}</span>{(products.find((item) => item.id === productId)?.name ?? productId).toLocaleLowerCase('ru-RU')} {number.format(value)} кг</span>)}</p><div className="constraint-list" aria-label="Проверки ограничений"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Машины</span><span>✓ Сроки</span></div></div>
       </section>
 
       <section className="comparison-section compact-comparison">
@@ -141,7 +141,7 @@ export function ComparisonStep() {
             if (!direction.included) return <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article>
             return <details className="compact-route-card" key={buyerId}>
               <summary><span><h3>{buyer.name}</h3><small>{number.format(direction.weight)} кг · {money.format(direction.contribution)} · <b className={`risk risk-${direction.risk}`}>{riskLabel(direction.risk!)}</b></small></span><i aria-hidden="true">⌄</i></summary>
-              <div className="route-more"><span><small>Машины</small><b>{direction.vehicles.map((id) => { const vehicle = vehicles.find((item) => item.id === id); return `${vehicle?.plateNumber ?? id}${vehicle?.model ? ` · ${vehicle.model}` : ''}` }).join('; ')}</b></span><span><small>Время доставки</small><b>{direction.times.map((time) => `${number.format(time)} ч`).join(' / ')}</b></span><span><small>Мин. запас времени</small><b>{direction.margin === null ? '—' : `${number.format(direction.margin)} ч`}</b></span></div>
+              <div className="route-more"><span><small>Машины</small><b className="vehicle-label-list">{direction.vehicles.map((id, index) => { const vehicle = vehicles.find((item) => item.id === id); return <span key={id}>{index > 0 && '; '}<span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(id)}</span>{vehicle?.plateNumber ?? id}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span> })}</b></span><span><small>Время доставки</small><b>{direction.times.map((time) => `${number.format(time)} ч`).join(' / ')}</b></span><span><small>Мин. запас времени</small><b>{direction.margin === null ? '—' : `${number.format(direction.margin)} ч`}</b></span></div>
             </details>
           })}
         </div>

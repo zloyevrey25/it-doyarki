@@ -55,6 +55,8 @@
 }
 @media(max-width:1100px){.page-comparison .compact-route-columns{grid-template-columns:minmax(0,1fr);overflow:visible}.page-comparison .compact-route-card{min-width:0}.page-comparison .compact-route-card header p{white-space:normal}.page-comparison .compact-route-card footer{flex-wrap:wrap}}
 
+@media(min-width:1101px){.page-buyers .buyer-list{grid-template-columns:repeat(2,minmax(0,1fr))}.vehicle-card .refrigeration-note{padding:2px 6px;margin:0}}
+
 @media(min-width:1101px){
 .app-header{grid-template-columns:240px minmax(420px,1fr) auto}
 .page-input{padding-bottom:0}.page-input .page-heading{margin-bottom:10px}.page-input>.panel{margin-bottom:8px}.page-input .section-title{margin-bottom:8px}.page-input .page-action{margin-top:6px}

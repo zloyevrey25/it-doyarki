@@ -80,9 +80,11 @@ const DELIVERY_CITIES: DeliveryCity[] = [
 const BUYER_NAMES = ['ФрешМаркет', 'РегионПродукт', 'АгроСнаб', 'ВекторМаркет', 'ФудЛогистика']
 const DEMAND_BASE: Record<string, number> = {
   strawberry: 320,
+  blueberry: 240,
   tomato: 420,
   cucumber: 300,
   apple: 360,
+  banana: 380,
   carrot: 260,
   potato: 560,
   cabbage: 300,
@@ -90,9 +92,11 @@ const DEMAND_BASE: Record<string, number> = {
 }
 const PRICE_BASE: Record<string, number> = {
   strawberry: 340,
+  blueberry: 420,
   tomato: 175,
   cucumber: 135,
   apple: 160,
+  banana: 190,
   carrot: 100,
   potato: 80,
   cabbage: 110,
@@ -164,6 +168,13 @@ export async function geocodeFarmLocation(query: string): Promise<[number, numbe
 }
 
 export const DEFAULT_BUYERS = createNearbyBuyers(DEFAULT_FARM_COORDINATES)
+
+export const FARM_LOCATION_SUGGESTIONS = [DEFAULT_FARM_LOCATION, ...DELIVERY_CITIES.map(({ city }) => city)]
+
+export function canonicalFarmLocation(value: string) {
+  const normalized = value.trim().toLocaleLowerCase('ru-RU')
+  return FARM_LOCATION_SUGGESTIONS.find((item) => item.toLocaleLowerCase('ru-RU') === normalized) ?? value
+}
 
 export function requireBuyerCoverage(buyers: Buyer[]) {
   if (buyers.length < 4) throw new NetworkError('coverage', `В локальном каталоге найдено ${buyers.length} покупателей в пределах 700 км. Для расчёта нужны 4–5. Выберите демонстрационный адрес или другой населённый пункт.`)

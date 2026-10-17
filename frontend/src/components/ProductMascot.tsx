@@ -15,6 +15,8 @@ export function ProductMascot({ name, color, accent, shape, size = 52 }: Props) 
     switch (shape) {
       case 'strawberry':
         return <><path d="M11 18c1-7 27-7 29 0 1 8-8 25-15 28-7-3-15-20-14-28Z" fill={color} stroke="#c83232" strokeWidth="1.5" /><g fill="#ffd36a"><circle cx="16" cy="25" r="1"/><circle cx="34" cy="25" r="1"/><circle cx="20" cy="36" r="1"/><circle cx="30" cy="37" r="1"/></g>{leaves}</>
+      case 'blueberry':
+        return <><g fill={color} stroke={accent} strokeWidth=".8"><circle cx="19" cy="18" r="7"/><circle cx="29" cy="17" r="7"/><circle cx="35" cy="25" r="7"/><circle cx="31" cy="35" r="7"/><circle cx="21" cy="38" r="7"/><circle cx="14" cy="30" r="7"/><circle cx="24" cy="27" r="8"/></g>{leaves}</>
       case 'cucumber':
         return <><path d="M10 32c5-15 20-24 29-17 8 7-3 23-17 29-9 4-16-4-12-12Z" fill={color} stroke={accent} strokeWidth="2"/><g fill="#86d99a"><circle cx="17" cy="33" r="1.2"/><circle cx="28" cy="22" r="1.2"/><circle cx="35" cy="18" r="1.2"/></g></>
       case 'carrot':

@@ -1,7 +1,8 @@
 import L, { type CircleMarker, type Map as LeafletMap, type Polyline } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './route-map.css'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { fetchJson } from '../api/network'
 import { useApp } from '../context/AppContext'
 import { ROUTE_COLORS } from '../data/catalog'
 
@@ -31,12 +32,10 @@ function textBlock(title: string, detail: string) {
 
 async function loadRoadRoute(from: [number, number], to: [number, number], signal: AbortSignal) {
   const coordinates = `${from[1]},${from[0]};${to[1]},${to[0]}`
-  const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`, { signal })
-  if (!response.ok) throw new Error('Сервис маршрутов временно недоступен')
-  const result = await response.json() as {
+  const result = await fetchJson<{
     code: string
     routes?: Array<{ geometry: { coordinates: Array<[number, number]> } }>
-  }
+  }>(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`, { signal }, 10000)
   const geometry = result.routes?.[0]?.geometry.coordinates
   if (result.code !== 'Ok' || !geometry) throw new Error('Маршрут не найден')
   return geometry.map(([longitude, latitude]) => [latitude, longitude] as [number, number])
@@ -44,6 +43,7 @@ async function loadRoadRoute(from: [number, number], to: [number, number], signa
 
 export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, compact = false }: Props) {
   const { farmLocation, farmCoordinates, buyers } = useApp()
+  const [tilesUnavailable, setTilesUnavailable] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<LeafletMap | null>(null)
   const routeLayersRef = useRef(new Map<string, RouteLayer>())
@@ -75,12 +75,17 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
       : farmCoordinates
     const map = L.map(containerRef.current, { zoomControl: true, minZoom: 4 }).setView(initialCenter, initialBuyer ? 10 : 7)
     map.attributionControl.setPrefix(false)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map)
+    let loaded = false
+    const tileTimer = window.setTimeout(() => { if (!loaded) { setTilesUnavailable(true); tiles.remove() } }, 10000)
+    tiles.on('tileload', () => { loaded = true; setTilesUnavailable(false) })
+    tiles.on('tileerror', () => setTilesUnavailable(true))
     mapRef.current = map
     return () => {
+      window.clearTimeout(tileTimer)
       map.remove()
       mapRef.current = null
     }
@@ -132,15 +137,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
       fitTimer = window.setTimeout(() => {
         if (cancelled) return
         map.invalidateSize({ animate: false })
-        if (compact && visibleBuyers.length === 1) {
-          const [buyerLatitude, buyerLongitude] = visibleBuyers[0].coordinates
-          map.setView([
-            (farmCoordinates[0] + buyerLatitude) / 2,
-            (farmCoordinates[1] + buyerLongitude) / 2,
-          ], 10, { animate: false })
-        } else {
-          map.fitBounds(bounds, { padding: [46, 46], maxZoom: compact ? 10 : 7 })
-        }
+          map.fitBounds(bounds, { padding: [46, 46], maxZoom: compact ? 10 : 7, animate: false })
       }, 80)
 
       await Promise.all(visibleBuyers.map(async (buyer, index) => {
@@ -189,7 +186,7 @@ export function RouteMap({ selectedBuyerIds, activeBuyerIds, onToggleBuyer, comp
   return (
     <div className={`route-map real-route-map ${compact ? 'is-compact' : ''}`} aria-label="Интерактивная карта маршрутов доставки OpenStreetMap">
       <div ref={containerRef} className="leaflet-host" />
-      <div className="map-legend"><span><i className="legend-line selected" />Выбранный путь</span><span><i className="legend-line" />Доступный путь</span></div>
+      <div className="map-legend" role="status"><span>{tilesUnavailable ? 'Подложка недоступна. Показана схема точек. ' : ''}Пунктир — условные линии; сплошные — дороги OSRM.</span></div>
     </div>
   )
 }

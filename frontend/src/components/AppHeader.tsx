@@ -3,10 +3,10 @@ import { useApp } from '../context/AppContext'
 const steps = ['Исходные данные', 'Покупатели и маршруты', 'Сравнение']
 
 export function AppHeader() {
-  const { step, setStep } = useApp()
+  const { step, setStep, status } = useApp()
   return (
     <header className="app-header">
-      <button className="brand" onClick={() => setStep(1)} aria-label="Перейти к исходным данным">
+      <button className="brand" disabled={status === 'loading'} onClick={() => setStep(1)} aria-label="Перейти к исходным данным">
         <span className="brand-mark" aria-hidden="true">🌱</span>
         <span><strong>Спаси урожай</strong><small>Планировщик поставок</small></span>
       </button>
@@ -21,7 +21,7 @@ export function AppHeader() {
           )
         })}
       </nav>
-      {step > 1 ? <button className="button button-ghost header-back" onClick={() => setStep((step - 1) as 1 | 2)} aria-label="Вернуться на предыдущий этап">← Назад</button> : <span className="header-spacer" />}
+      {step > 1 ? <button className="button button-ghost header-back" disabled={status === 'loading'} onClick={() => setStep((step - 1) as 1 | 2)} aria-label="Вернуться на предыдущий этап">← Назад</button> : <span className="header-spacer" />}
     </header>
   )
 }

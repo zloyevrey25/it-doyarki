@@ -1,12 +1,13 @@
 import type { Buyer, BuyerDemand } from '../types'
 import { DEFAULT_FARM_COORDINATES, PRODUCT_CATALOG } from './catalog'
+import { fetchJson, NetworkError } from '../api/network'
 
 interface DeliveryCity {
   city: string
   coordinates: [number, number]
 }
 
-const DEFAULT_FARM_LOCATION = 'село Большие Кабаны, Республика Татарстан'
+export const DEFAULT_FARM_LOCATION = 'село Большие Кабаны, Республика Татарстан'
 const MAX_DELIVERY_RADIUS_KM = 700
 
 const DELIVERY_CITIES: DeliveryCity[] = [
@@ -150,13 +151,20 @@ export async function geocodeFarmLocation(query: string): Promise<[number, numbe
   }
 
   const params = new URLSearchParams({ format: 'jsonv2', limit: '1', countrycodes: 'ru', q: query.trim() })
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+  let results: Array<{ lat: string; lon: string }>
+  try { results = await fetchJson(`https://nominatim.openstreetmap.org/search?${params}`, {
     headers: { Accept: 'application/json', 'Accept-Language': 'ru' },
-  })
-  if (!response.ok) throw new Error('Сервис адресов временно недоступен. Попробуйте ещё раз.')
-  const results = await response.json() as Array<{ lat: string; lon: string }>
-  if (!results.length) throw new Error('Не удалось найти адрес фермы. Уточните населённый пункт или улицу.')
+  }, 10000) } catch (error) {
+    throw new NetworkError(error instanceof NetworkError ? error.kind : 'unavailable', `Поиск адреса: ${error instanceof Error ? error.message : 'Сервис недоступен.'}`)
+  }
+  if (!Array.isArray(results)) throw new NetworkError('unavailable', 'Сервис адресов вернул некорректный ответ. Повторите попытку.')
+  if (!results.length) throw new NetworkError('address', 'Адрес не найден. Уточните населённый пункт или улицу.')
+  if (!Number.isFinite(Number(results[0].lat)) || !Number.isFinite(Number(results[0].lon))) throw new NetworkError('unavailable', 'Не удалось определить координаты адреса.')
   return [Number(results[0].lat), Number(results[0].lon)]
 }
 
 export const DEFAULT_BUYERS = createNearbyBuyers(DEFAULT_FARM_COORDINATES)
+
+export function requireBuyerCoverage(buyers: Buyer[]) {
+  if (buyers.length < 4) throw new NetworkError('coverage', `В локальном каталоге найдено ${buyers.length} покупателей в пределах 700 км. Для расчёта нужны 4–5. Выберите демонстрационный адрес или другой населённый пункт.`)
+}

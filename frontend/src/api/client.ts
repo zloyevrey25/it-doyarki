@@ -1,30 +1,19 @@
 import type { CompareRoutesResult, OptimizationResult, OptimizeRequest } from '../types'
+import { fetchJson, NetworkError } from './network'
 
 const configuredUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '')
 const API_URL = configuredUrl || '/api'
 
-class ApiError extends Error {
-  constructor(message: string, public status?: number) {
-    super(message)
-  }
-}
-
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  let response: Response
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    return await fetchJson<T>(`${API_URL}${path}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options?.headers },
     })
-  } catch {
-    throw new ApiError('Не удалось связаться с сервером. Проверьте, запущен ли backend.')
+  } catch (error) {
+    if (error instanceof NetworkError) throw new NetworkError(error.kind, `Расчёт: ${error.message}${error.kind === 'unavailable' ? ' Проверьте, запущен ли локальный сервер расчёта.' : ''}`)
+    throw new Error('Не удалось выполнить расчёт. Повторите попытку.')
   }
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null) as { detail?: string } | null
-    throw new ApiError(payload?.detail || 'Сервер не смог выполнить расчёт.', response.status)
-  }
-  return response.json() as Promise<T>
 }
 
 export const apiClient = {

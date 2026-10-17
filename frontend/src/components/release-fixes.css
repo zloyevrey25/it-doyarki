@@ -1,0 +1,15 @@
+.plan-changes,.calculation-tools,.model-assumptions{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12px}
+.plan-changes summary,.model-assumptions summary{cursor:pointer;font-weight:700}
+.calculation-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.calculation-tools p{margin:0;flex:1;min-width:180px}
+.price-editor{display:flex;align-items:center;gap:4px;font-size:11px}
+.price-editor input{width:82px;min-height:30px;border:1px solid var(--line);border-radius:7px;padding:4px}
+.price-editor input[aria-invalid=true]{border-color:#bd312d}
+.change-table{overflow-x:auto}.change-table table{width:100%;border-collapse:collapse;font-size:12px}.change-table th,.change-table td{text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+.plan-changes li{margin:5px 0}.request-alert{color:#9d2929;background:#fff1ef;padding:10px;border-radius:10px;font-size:13px}
+.assumptions-wrap{width:calc(100% - 48px);max-width:1460px;margin:auto}.assumptions-wrap details{margin-bottom:0}
+.page-comparison>.plan-changes{grid-column:1/-1;grid-row:6;min-width:0}
+.page-comparison .optimal-grid>div>small{grid-column:1/-1;font-size:10px;line-height:1.4}
+.route-highlight-grid b{white-space:normal;overflow-wrap:anywhere}.route-highlight-grid>span{min-width:0}
+.location-panel>small{grid-column:1/-1;color:var(--muted)}
+@media(max-width:600px){.change-table table{font-size:10px}.change-table th,.change-table td{padding:4px}.calculation-tools .button{width:100%}}

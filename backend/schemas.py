@@ -84,6 +84,9 @@ class ItineraryStopOutput(BaseModel):
     leg_distance_km: float
     distance_km: float
     arrival_time: float
+    unloaded_kg: float
+    remaining_load_kg: float
+    spoilage_risk: str
     unloads: List[UnloadOutput]
 
 

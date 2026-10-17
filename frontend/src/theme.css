@@ -1,0 +1,94 @@
+:root{color-scheme:light;--surface-soft:#f1f5f2;--surface-subtle:#fbfcfb}.theme-toggle{position:relative;display:grid;grid-template-columns:18px 22px 18px;align-items:center;min-height:34px;padding:3px 5px;border:1px solid #dce3de;border-radius:99px;background:#eef2ef;color:#66746b;cursor:pointer}.theme-toggle span{font-size:12px;line-height:1}.theme-toggle i{position:absolute;z-index:0;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(20,36,27,.18);transition:transform .2s ease}.theme-toggle span{position:relative;z-index:1}.theme-toggle[aria-checked=true] i{transform:translateX(29px)}.theme-toggle:focus-visible{outline:3px solid rgba(17,133,84,.25);outline-offset:2px}
+:root[data-theme=dark]{color-scheme:dark;--ink:#edf5ef;--muted:#aebbb2;--line:#34463b;--panel:#17241d;--green:#4fc58a;--green-dark:#8be0ad;--green-soft:#203d2e;--surface-soft:#223129;--surface-subtle:#1b2921;--shadow:0 12px 35px rgba(0,0,0,.25);background:#101a14}
+:root[data-theme=dark] body,:root[data-theme=dark] .app-shell{background:#101a14;color:var(--ink)}
+:root[data-theme=dark] .app-header{background:rgba(20,32,25,.96);border-color:var(--line)}
+:root[data-theme=dark] .brand,:root[data-theme=dark] .button-ghost,:root[data-theme=dark] .model-assumptions,:root[data-theme=dark] .comparison-dialog{color:var(--ink)}
+:root[data-theme=dark] .panel,:root[data-theme=dark] .comparison-section,:root[data-theme=dark] .final-map,:root[data-theme=dark] .buyer-card,:root[data-theme=dark] .product-card.is-active,:root[data-theme=dark] .vehicle-card,:root[data-theme=dark] .metric-strip article,:root[data-theme=dark] .route-sheet,:root[data-theme=dark] .route-sheets-summary article,:root[data-theme=dark] .plan-changes,:root[data-theme=dark] .comparison-dialog{background:var(--panel);border-color:var(--line)}
+:root[data-theme=dark] .product-card,:root[data-theme=dark] .compact-route-card,:root[data-theme=dark] .alternative-plan,:root[data-theme=dark] .alternative-detail-grid>div,:root[data-theme=dark] .route-more,:root[data-theme=dark] .alternative-metrics>span,:root[data-theme=dark] .summary-chip-list b,:root[data-theme=dark] .frozen-summary{background:var(--surface-subtle);color:var(--ink);border-color:var(--line)}
+:root[data-theme=dark] .field input,:root[data-theme=dark] .field select,:root[data-theme=dark] .price-editor input,:root[data-theme=dark] .button-secondary,:root[data-theme=dark] .button-ghost,:root[data-theme=dark] .model-assumptions>summary,:root[data-theme=dark] .compact-badge,:root[data-theme=dark] .price-mode-button{background:#1b2921;color:var(--ink);border-color:var(--line)}
+:root[data-theme=dark] .assumptions-popover{background:#17241d;border-color:var(--line);box-shadow:0 18px 50px rgba(0,0,0,.45)}
+:root[data-theme=dark] .optimal-panel{background:#dff3e6;color:#173426}
+:root[data-theme=dark] .optimal-panel .optimal-heading p,:root[data-theme=dark] .optimal-panel .shipment-line small{color:#4f6b5b}
+:root[data-theme=dark] .optimal-panel .optimal-metrics article{background:#edf8f0;border-color:#b8d8c3}
+:root[data-theme=dark] .optimal-panel .optimal-metrics span{color:#597064}
+:root[data-theme=dark] .optimal-panel .constraint-list span{background:#d2eadb;border-color:#9ec9ad;color:#225d3d}
+:root[data-theme=dark] .optimal-panel .shipment-summary,:root[data-theme=dark] .optimal-panel .shipment-route-group,:root[data-theme=dark] .optimal-panel .shipment-stop{background:rgba(255,255,255,.52);border-color:#bad7c4}
+:root[data-theme=dark] .route-map{background:#1b2921;border-color:var(--line)}
+:root[data-theme=dark] .landing{background:radial-gradient(ellipse at 80% 45%,#1b3023,transparent 60%)}
+:root[data-theme=dark] .landing-copy h2,:root[data-theme=dark] .landing-copy p,:root[data-theme=dark] .landing-copy>small,:root[data-theme=dark] .landing-benefits p{color:var(--muted)}
+:root[data-theme=dark] .theme-toggle{background:#0f1813;border-color:#42564a;color:#d7e3da}
+:root[data-theme=dark] .theme-toggle i{background:#52665a;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+@media print{:root,:root[data-theme=dark]{color-scheme:light!important;--ink:#000;--muted:#333;--line:#777;--panel:#fff;--green-dark:#000;--surface-soft:#fff;--surface-subtle:#fff;background:#fff!important}}
+
+/* The switch keeps both glyphs on the same optical grid in either theme. */
+.theme-toggle{display:block;width:68px;height:34px;min-height:34px;padding:0;overflow:hidden}
+.theme-toggle span{position:absolute;top:3px;display:grid;place-items:center;width:26px;height:26px;font-size:12px;line-height:1;transform:none}
+.theme-toggle span:first-of-type{left:4px}
+.theme-toggle span:last-of-type{right:4px}
+.theme-toggle i{top:3px;left:4px}
+.theme-toggle[aria-checked=true] i{transform:translateX(32px)}
+
+/* Dark surfaces and their text must move together to preserve contrast. */
+:root[data-theme=dark] .landing{color:var(--ink);background:radial-gradient(ellipse at 80% 45%,#1b3023,transparent 60%),#101a14}
+:root[data-theme=dark] .landing-copy h1,
+:root[data-theme=dark] .landing-benefits h3{color:var(--ink)}
+:root[data-theme=dark] .event-badge{background:#292541;color:#d8cffc}
+:root[data-theme=dark] .scene-label,
+:root[data-theme=dark] .scene-profit{background:rgba(23,36,29,.96);border-color:#405448;color:var(--ink);box-shadow:0 12px 35px rgba(0,0,0,.28)}
+:root[data-theme=dark] .scene-label small{color:#b8c6bd}
+:root[data-theme=dark] .scene-profit b{color:#8be0ad}
+:root[data-theme=dark] .scene-dot{box-shadow:0 0 0 7px #294a37}
+
+:root[data-theme=dark] .selection-counter,
+:root[data-theme=dark] .page-action,
+:root[data-theme=dark] .request-state,
+:root[data-theme=dark] .custom-product-form,
+:root[data-theme=dark] .wish-button,
+:root[data-theme=dark] .frozen-products>span,
+:root[data-theme=dark] .frozen-vehicles>span,
+:root[data-theme=dark] .route-column,
+:root[data-theme=dark] .map-caption,
+:root[data-theme=dark] .farm-marker,
+:root[data-theme=dark] .marker-label,
+:root[data-theme=dark] .map-legend{background:var(--surface-subtle);border-color:var(--line);color:var(--ink)}
+:root[data-theme=dark] .page-action{background:rgba(23,36,29,.96)}
+:root[data-theme=dark] .field{color:#cad7ce}
+:root[data-theme=dark] .field input:focus,
+:root[data-theme=dark] .field select:focus{background:#223129;color:var(--ink)}
+:root[data-theme=dark] .field input:disabled,
+:root[data-theme=dark] .vehicle-card.is-disabled{background:#1a261f;color:#8e9d93}
+:root[data-theme=dark] .plate-number{background:#f5f7f5;color:#17241c;border-color:#aab4ad}
+:root[data-theme=dark] .buyer-avatar,
+:root[data-theme=dark] .state-icon{background:#243b2e;color:#75d5a0}
+:root[data-theme=dark] .checkmark{background:#26352c;border-color:#718078}
+:root[data-theme=dark] .product-select input:checked+.checkmark{background:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 4px #17241d}
+:root[data-theme=dark] .route-map:before{background-image:linear-gradient(#314239 1px,transparent 1px),linear-gradient(90deg,#314239 1px,transparent 1px)}
+:root[data-theme=dark] .marker-pin{border-color:#dce8df}
+
+:root[data-theme=dark] .route-sheets-summary article.is-primary{background:#183b29;border-color:#3b7655}
+:root[data-theme=dark] .route-sheets-summary .is-primary span{color:#b7c9bd}
+:root[data-theme=dark] .route-sheets-summary .is-primary strong{color:#8be0ad}
+:root[data-theme=dark] .completion-status{background:#1d4631;color:#9ae6b8}
+:root[data-theme=dark] .cold-badge.is-cold{background:#1b3542;border-color:#46738a;color:#b8def0}
+
+:root[data-theme=dark] .demo-notice,
+:root[data-theme=dark] .recalculation-notice,
+:root[data-theme=dark] .stale-sheets-alert{background:#3b3219;border-color:#746331;color:#f0dda2}
+:root[data-theme=dark] .request-alert{background:#402421;color:#ffb9b4}
+:root[data-theme=dark] .data-notice{background:#1c3929;border-color:#39644a;color:#b8dec5}
+
+@media(min-width:1101px){
+  .page-comparison>.compact-final-map{
+    display:flex;
+    grid-column:2;
+    grid-row:3/6;
+    align-self:stretch;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .page-comparison>.compact-final-map .route-map.is-compact{
+    flex:1;
+    min-height:520px;
+  }
+}

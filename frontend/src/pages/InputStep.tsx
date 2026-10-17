@@ -62,7 +62,7 @@ export function InputStep() {
       const result = await apiClient.optimize(request)
       setFarmCoordinates(coordinates); setBuyers(nearbyBuyers)
       acceptCalculation(result, request, reset)
-      setStatus(result.shipments.length ? 'success' : 'empty'); setStep(2)
+      setStatus(result.shipments.length ? 'success' : 'empty'); setStep(2); window.scrollTo(0, 0)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Неизвестная ошибка backend.'); setStatus('error')
     } finally { pending.current = false }

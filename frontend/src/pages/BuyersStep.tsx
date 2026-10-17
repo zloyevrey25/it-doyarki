@@ -40,7 +40,7 @@ export function BuyersStep() {
     if (!buyerIds.length || stale || !pricesValid || busy.current) return
     busy.current = true
     setStatus('loading'); setError('')
-    try { const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers), buyerIds, 3); setComparison(result); setStatus(result.solutions.length ? 'success' : 'empty'); setStep(3) }
+    try { const result = await apiClient.compareRoutes(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers), buyerIds, 3); setComparison(result); setStatus(result.solutions.length ? 'success' : 'empty'); setStep(3); window.scrollTo(0, 0) }
     catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Ошибка backend.'); setStatus('error') }
     finally { busy.current = false }
   }

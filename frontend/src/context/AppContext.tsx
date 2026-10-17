@@ -1,12 +1,14 @@
-import { createContext, useContext, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { buildOptimizeRequest, DEFAULT_VEHICLES, PRODUCT_CATALOG } from '../data/catalog'
 import { locationIdentity } from '../data/planChanges'
 import { DEFAULT_BUYERS } from '../data/nearbyBuyers'
 import type { Buyer, CompareRoutesResult, OptimizationResult, OptimizeRequest, Product, RequestStatus, Vehicle } from '../types'
 
 interface AppContextValue {
-  step: 1 | 2 | 3
-  setStep: (step: 1 | 2 | 3) => void
+  step: 1 | 2 | 3 | 4
+  setStep: (step: 1 | 2 | 3 | 4) => void
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   farmLocation: string
   setFarmLocation: (value: string) => void
   farmCoordinates: [number, number]
@@ -37,7 +39,12 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = window.localStorage.getItem('harvest-theme')
+    if (saved === 'light' || saved === 'dark') return saved
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
   const [farmLocation, setFarmLocation] = useState('село Большие Кабаны, Республика Татарстан')
   const [farmCoordinates, setFarmCoordinates] = useState<[number, number]>([55.6493585, 49.3054794])
   const [buyers, setBuyers] = useState<Buyer[]>(DEFAULT_BUYERS)
@@ -52,6 +59,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [previousPlan, setPreviousPlan] = useState<OptimizationResult | null>(null)
   const [dataNotice, setDataNotice] = useState('')
   const stale = !!calculatedRequest && JSON.stringify(buildOptimizeRequest(products, vehicles, farmLocation, farmCoordinates, buyers)) !== JSON.stringify(calculatedRequest)
+  const toggleTheme = () => setTheme((current) => current === 'light' ? 'dark' : 'light')
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('harvest-theme', theme)
+  }, [theme])
   const acceptCalculation = (result: OptimizationResult, request: OptimizeRequest, reset: boolean) => {
     const changed = JSON.stringify(request) !== JSON.stringify(calculatedRequest)
     if (reset) setPreviousPlan(null)
@@ -64,12 +76,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo(() => ({
-    step, setStep, farmLocation, setFarmLocation, farmCoordinates, setFarmCoordinates, buyers, setBuyers,
+    step, setStep, theme, toggleTheme, farmLocation, setFarmLocation, farmCoordinates, setFarmCoordinates, buyers, setBuyers,
     products, setProducts, vehicles, setVehicles,
     selectedBuyers, setSelectedBuyers, optimization, setOptimization, comparison, setComparison,
     status, setStatus, error, setError,
     calculatedRequest, previousPlan, stale, dataNotice, acceptCalculation,
-  }), [step, farmLocation, farmCoordinates, buyers, products, vehicles, selectedBuyers, optimization, comparison, status, error, calculatedRequest, previousPlan, stale, dataNotice])
+  }), [step, theme, farmLocation, farmCoordinates, buyers, products, vehicles, selectedBuyers, optimization, comparison, status, error, calculatedRequest, previousPlan, stale, dataNotice])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

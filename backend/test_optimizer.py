@@ -110,6 +110,15 @@ class OptimizerTest(unittest.TestCase):
         self.assertAlmostEqual(sum(row["quantity"] for row in result["shipments"]), 15)
         self.assertAlmostEqual(result["used_capacity"]["truck"], 15)
 
+    def test_stop_unloads_and_remaining_load_match_itinerary(self):
+        itinerary = optimize_shipments(scenario())["itineraries"][0]
+        self.assertAlmostEqual(
+            sum(stop["unloaded_kg"] for stop in itinerary["ordered_stops"]),
+            itinerary["total_load_kg"],
+        )
+        self.assertAlmostEqual(itinerary["ordered_stops"][-1]["remaining_load_kg"], 0)
+        self.assertGreater(itinerary["ordered_stops"][0]["remaining_load_kg"], 0)
+
     def test_unavailable_vehicle_is_not_used(self):
         data = scenario()
         data["vehicles"]["truck"]["available"] = False

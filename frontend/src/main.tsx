@@ -4,5 +4,6 @@ import App from './App'
 import { AppProvider } from './context/AppContext'
 import './styles.css'
 import './workspace-layout.css'
+import './theme.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AppProvider><App /></AppProvider></React.StrictMode>)

@@ -9,12 +9,6 @@ import './comparison-step.css'
 import { PlanChanges } from '../components/PlanChanges'
 import { productEmoji, vehicleEmoji } from '../data/emoji'
 
-const routeProfitExplanation = 'Выручка минус затраты направления. Фиксированная стоимость машины учтена один раз в итоговой прибыли.'
-
-function RouteProfitHint() {
-  return <span className="info-hint" title={routeProfitExplanation} aria-label={routeProfitExplanation} tabIndex={0}>ⓘ</span>
-}
-
 interface AlternativePlanProps {
   solution: ComparisonSolution
   bestProfit: number
@@ -78,7 +72,7 @@ function AlternativePlan({ solution, bestProfit, products, vehicles, buyers }: A
 }
 
 export function ComparisonStep() {
-  const { products, vehicles, farmLocation, farmCoordinates, buyers, selectedBuyers, comparison, setComparison, status, setStatus, error, setError } = useApp()
+  const { products, vehicles, farmLocation, farmCoordinates, buyers, selectedBuyers, comparison, setComparison, status, setStatus, error, setError, setStep, stale } = useApp()
 
   const retry = async () => {
     setStatus('loading')
@@ -104,14 +98,14 @@ export function ComparisonStep() {
   return (
     <main className="page page-comparison">
       <div className="page-heading compact-page-heading">
-        <span className="eyebrow">Этап 3 из 3</span>
+        <span className="eyebrow">Этап 3 из 4</span>
         <h1>Результат расчёта</h1>
       </div>
 
       <section className="frozen-summary compact-summary" aria-label="Зафиксированные исходные данные">
         <div className="summary-location"><span>Ферма</span><b title={farmLocation}>{farmLocation}</b></div>
         <div className="summary-group"><span>Урожай</span><div className="summary-chip-list">{selectedProducts.map((product) => <b key={product.id}><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(product.id)}</span>{product.name} · {number.format(typeof product.quantityKg === 'number' ? product.quantityKg : 0)} кг</b>)}</div></div>
-        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(vehicle.id)}</span>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
+        <div className="summary-group"><span>Транспорт</span><div className="summary-chip-list vehicle-summary-list">{availableVehicles.map((vehicle) => <b key={vehicle.id}><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(vehicle.id)}</span>{vehicle.plateNumber} · {number.format(vehicle.capacityKg)} кг{vehicle.refrigerationHours ? ` · ❄ +${vehicle.refrigerationHours} ч` : ''}</b>)}</div></div>
       </section>
 
       <section className="optimal-panel compact-optimal-panel">
@@ -124,21 +118,15 @@ export function ComparisonStep() {
           <article><span>Транспорт</span><strong>{money.format(best.transport_cost)}</strong></article>
           <article><span>Выполнение спроса</span><strong>{number.format(best.plan_metrics.fulfillment_rate_percent)}%</strong></article>
         </div>
-        <div className="shipment-summary">
-          <h3>Основные отгрузки</h3><div className="shipment-grid">{best.shipments.map((shipment) => { const product = products.find((item) => item.id === shipment.product); const buyer = buyers.find((item) => item.id === shipment.buyer); return <div className="shipment-line" key={`${shipment.product}-${shipment.buyer}-${shipment.vehicle}`}><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(shipment.product)}</span><span><b>{product?.name ?? shipment.product}</b><small>→ {buyer?.name}</small></span><strong>{number.format(shipment.quantity)} кг</strong></div> })}</div>
+        <div className="shipment-summary itinerary-shipment-summary">
+          <h3>Отгрузки по рейсам</h3>
+          <div className="shipment-itinerary-list">{best.itineraries.map((itinerary, itineraryIndex) => { const vehicle = vehicles.find((item) => item.id === itinerary.vehicle); const sequence = ['Ферма', ...itinerary.ordered_stops.map((stop) => stop.city)].join(' → '); return <article className="shipment-route-group" key={`${itinerary.vehicle}-${itinerary.id}`}>
+            <header><span className="route-group-number">{itineraryIndex + 1}</span><span className="emoji-icon route-group-vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span><div><b>{vehicle?.plateNumber ?? itinerary.vehicle} · {vehicle?.model ?? itinerary.vehicle}</b><small>{sequence}</small></div><span className={`risk risk-${itinerary.spoilage_risk}`}>Риск порчи: {riskLabel(itinerary.spoilage_risk).toLocaleLowerCase('ru-RU')}</span></header>
+            <div className="shipment-stop-list">{itinerary.ordered_stops.map((stop) => <section className="shipment-stop" key={`${itinerary.id}-${stop.order}`}><div className="shipment-stop-title"><span>{stop.order}</span><div><b>{stop.buyer_name}</b><small>{stop.city} · прибытие {duration(stop.arrival_time)}</small></div><strong>{number.format(stop.unloaded_kg)} кг</strong></div><div className="shipment-stop-products">{stop.unloads.map((unload) => { const product = products.find((item) => item.id === unload.product); return <span key={unload.product}><span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(unload.product)}</span><b>{product?.name ?? unload.product}</b> {number.format(unload.quantity)} кг</span> })}</div></section>)}</div>
+          </article> })}</div>
         </div>
         <div className="plan-footer"><p className="leftovers-inline"><b>Остатки:</b> {Object.entries(best.leftovers).map(([productId, value], index) => <span key={productId}>{index > 0 && ' · '}<span className="emoji-icon product-emoji" aria-hidden="true">{productEmoji(productId)}</span>{(products.find((item) => item.id === productId)?.name ?? productId).toLocaleLowerCase('ru-RU')} {number.format(value)} кг</span>)}</p><div className="constraint-list" aria-label="Проверки ограничений"><span>✓ Запасы</span><span>✓ Спрос</span><span>✓ Вместимость</span><span>✓ Машины</span><span>✓ Сроки</span></div></div>
-      </section>
-
-      <section className="comparison-section compact-comparison">
-        <div className="section-title compact-section-title"><div><h2>Направления рекомендованного плана</h2><p>До фикс. затрат <RouteProfitHint /></p></div></div>
-        <div className="compact-route-columns">
-          {best.itineraries.map((itinerary) => { const vehicle = vehicles.find((item) => item.id === itinerary.vehicle); const margins = itinerary.ordered_stops.flatMap((stop) => stop.unloads.map((unload) => unload.delivery_time_margin)); return <details className="compact-route-card" key={`${itinerary.vehicle}-${itinerary.id}`}>
-            <summary><span><h3>{itinerary.ordered_stops.map((stop) => stop.buyer_name).join(' → ')}</h3><small>{number.format(itinerary.total_load_kg)} кг · {money.format(itinerary.contribution_before_fixed_cost)} · <b className={`risk risk-${itinerary.spoilage_risk}`}>{riskLabel(itinerary.spoilage_risk)}</b></small></span><i aria-hidden="true">⌄</i></summary>
-            <div className="route-more"><span><small>Машина</small><b className="vehicle-label-list"><span><span className="emoji-icon vehicle-emoji" aria-hidden="true">{vehicleEmoji(itinerary.vehicle)}</span>{vehicle?.plateNumber ?? itinerary.vehicle}{vehicle?.model ? ` · ${vehicle.model}` : ''}</span></b></span><span><small>Прибытие</small><b>{itinerary.ordered_stops.map((stop) => `${stop.city}: ${duration(stop.arrival_time)}`).join(' · ')}</b></span><span><small>Мин. запас времени</small><b>{margins.length ? duration(Math.min(...margins)) : '—'}</b></span></div>
-          </details> })}
-          {selectedBuyers.filter((buyerId) => !best.buyers_used.includes(buyerId)).map((buyerId) => { const buyer = buyers.find((item) => item.id === buyerId); return buyer ? <article className="compact-route-card is-absent" key={buyerId}><h3>{buyer.name}</h3><p>Не включён в рекомендованный план</p></article> : null })}
-        </div>
+        <div className="result-primary-action"><button className="button button-primary button-large" type="button" disabled={stale} onClick={() => { setStep(4); window.scrollTo(0, 0) }}>Сформировать маршрутные листы <span aria-hidden="true">→</span></button></div>
       </section>
 
       {comparison.solutions.length > 1 && (

@@ -85,6 +85,9 @@ export interface ItineraryStop {
   leg_distance_km: number
   distance_km: number
   arrival_time: number
+  unloaded_kg: number
+  remaining_load_kg: number
+  spoilage_risk: 'low' | 'medium' | 'high'
   unloads: ItineraryUnload[]
 }
 

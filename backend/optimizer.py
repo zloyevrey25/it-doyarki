@@ -158,7 +158,8 @@ def _solve_model(data: dict[str, Any], excluded_patterns: Optional[list[frozense
         itinerary_revenue = itinerary_load = 0.0
         for index, buyer in enumerate(item["stops"]):
             arrival = item["cumulative_distances"][index] / vehicle["speed_kmh"]
-            unloads = []
+            unloads, stop_risks = [], []
+            unloaded_kg = 0.0
             for product in products:
                 quantity = shipped[(product, buyer, vehicle_id, itinerary_id)].value() or 0.0
                 if quantity <= TOLERANCE:
@@ -171,10 +172,17 @@ def _solve_model(data: dict[str, Any], excluded_patterns: Optional[list[frozense
                 unloads.append({"product": product, "quantity": quantity, "delivery_time_margin": margin, "spoilage_risk": risk})
                 itinerary_revenue += quantity * data["prices"][product][buyer]
                 itinerary_load += quantity
+                unloaded_kg += quantity
                 shipped_by_product[product] += quantity
                 used_capacity[vehicle_id] += quantity
                 risks.append(risk)
-            stops.append({"order": index + 1, "buyer": buyer, "buyer_name": data["buyer_info"][buyer].get("name", buyer), "city": data["buyer_info"][buyer].get("city", ""), "coordinates": list(data["buyer_info"][buyer]["coordinates"]), "leg_distance_km": round(item["leg_distances"][index], 6), "distance_km": round(item["cumulative_distances"][index], 6), "arrival_time": round(arrival, 6), "unloads": unloads})
+                stop_risks.append(risk)
+            stop_risk = "high" if "high" in stop_risks else "medium" if "medium" in stop_risks else "low"
+            stops.append({"order": index + 1, "buyer": buyer, "buyer_name": data["buyer_info"][buyer].get("name", buyer), "city": data["buyer_info"][buyer].get("city", ""), "coordinates": list(data["buyer_info"][buyer]["coordinates"]), "leg_distance_km": round(item["leg_distances"][index], 6), "distance_km": round(item["cumulative_distances"][index], 6), "arrival_time": round(arrival, 6), "unloaded_kg": round(unloaded_kg, 6), "remaining_load_kg": 0.0, "spoilage_risk": stop_risk, "unloads": unloads})
+        remaining_load = itinerary_load
+        for stop in stops:
+            remaining_load -= stop["unloaded_kg"]
+            stop["remaining_load_kg"] = round(max(0.0, remaining_load), 6)
         route_cost = vehicle["route_base_cost"] + item["total_distance"] * vehicle["cost_per_km"]
         worst = "high" if "high" in risks else "medium" if "medium" in risks else "low"
         itinerary_outputs.append({"id": itinerary_id, "vehicle": vehicle_id, "ordered_stops": stops, "total_distance_km": round(item["total_distance"], 6), "total_time": round(item["total_distance"] / vehicle["speed_kmh"], 6), "total_load_kg": round(itinerary_load, 6), "itinerary_cost": round(route_cost, 6), "fixed_vehicle_cost": round(vehicle["cost"], 6), "revenue": round(itinerary_revenue, 6), "contribution_before_fixed_cost": round(itinerary_revenue - route_cost, 6), "refrigeration_hours": round(vehicle.get("refrigeration_hours", 0), 6), "spoilage_risk": worst})

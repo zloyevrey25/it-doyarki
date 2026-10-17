@@ -519,6 +519,15 @@
   background: #fff;
 }
 
+.page-comparison .compact-optimal-panel{background:#eaf7ee;color:#173426;border:1px solid #afd3bc;box-shadow:0 16px 38px rgba(29,92,55,.12)}
+.page-comparison .compact-optimal-panel .optimal-heading p{color:#587064}
+.page-comparison .compact-optimal-panel .profit-pill{background:#173d2a;color:#fff}
+.page-comparison .compact-optimal-panel .optimal-metrics article{background:#f7fcf8;border-color:#c3ddcc;color:#173426}
+.page-comparison .compact-optimal-panel .optimal-metrics span{color:#60766a}
+.page-comparison .compact-optimal-panel .constraint-list span{background:#d4ecdc;border-color:#a5ccb3;color:#205d3b}
+.summary-chip-list .product-mascot{flex:0 0 24px;width:24px;height:24px}.vehicle-summary-list b{padding:3px 8px}.vehicle-summary-list .truck-svg{flex:0 0 42px;width:42px;height:24px}.itinerary-shipment-summary{padding:9px;border:1px solid #bdd9c7;border-radius:13px;background:rgba(255,255,255,.42)}.itinerary-shipment-summary>h3{margin:0 0 7px;font-size:12px}.shipment-itinerary-list{display:grid;gap:7px}.shipment-route-group{overflow:hidden;border:1px solid #bad7c4;border-radius:11px;background:rgba(255,255,255,.55)}.shipment-route-group>header{display:grid;grid-template-columns:24px 48px minmax(0,1fr) auto;align-items:center;gap:7px;padding:6px 8px;border-bottom:1px solid #c9dfd0}.route-group-number{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#26734a;color:#fff;font-size:10px;font-weight:900}.shipment-route-group .truck-svg{display:block;width:46px;height:25px}.shipment-route-group header b,.shipment-route-group header small{display:block}.shipment-route-group header b{font-size:10px}.shipment-route-group header small{margin-top:2px;color:#577063;font-size:9px}.shipment-route-group header .risk{white-space:nowrap}.shipment-stop-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px}.shipment-stop{padding:6px 7px;border-radius:9px;background:rgba(255,255,255,.66)}.shipment-stop-title{display:grid;grid-template-columns:21px minmax(0,1fr) auto;align-items:center;gap:6px}.shipment-stop-title>span{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#d6ecde;color:#1c6540;font-size:9px;font-weight:900}.shipment-stop-title b,.shipment-stop-title small{display:block}.shipment-stop-title b{font-size:10px}.shipment-stop-title small{margin-top:1px;color:#60766a;font-size:8px}.shipment-stop-title>strong{font-size:10px}.shipment-stop-products{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.shipment-stop-products>span{display:inline-flex;align-items:center;gap:3px;padding:3px 5px;border-radius:7px;background:#fff;color:#42584b;font-size:8px}.shipment-stop-products .product-mascot{width:22px;height:22px}.result-primary-action{display:flex;justify-content:flex-end;margin-top:9px}.result-primary-action .button{min-height:40px}
+@media(max-width:760px){.shipment-route-group>header{grid-template-columns:24px 42px 1fr}.shipment-route-group header .risk{grid-column:2/-1;width:max-content}.shipment-stop-list{grid-template-columns:1fr}.result-primary-action .button{width:100%}}
+
 .route-more small,
 .route-more b {
   display: block;
@@ -643,4 +652,40 @@
   .alternative-plan summary > strong {
     font-size: 14px;
   }
+}
+
+.page-comparison .shipment-summary.itinerary-shipment-summary {
+  border-color: #bdd9c7;
+  background: rgba(255, 255, 255, .42);
+  color: #284b38;
+}
+
+.page-comparison .shipment-summary.itinerary-shipment-summary > h3 {
+  color: #284b38;
+}
+
+.page-comparison .leftovers-inline {
+  color: #4f6b5b;
+}
+
+.page-comparison .leftovers-inline b {
+  color: #173426;
+}
+
+.summary-chip-list .product-emoji,
+.vehicle-summary-list .vehicle-emoji {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 18px;
+}
+
+.route-group-vehicle-emoji {
+  display: block;
+  font-size: 27px;
+  line-height: 1;
+  text-align: center;
+}
+
+.shipment-stop-products .product-emoji {
+  font-size: 15px;
 }

@@ -1,7 +1,8 @@
 import { useApp } from '../context/AppContext'
 import { ModelAssumptions } from './ModelAssumptions'
+import { ThemeToggle } from './ThemeToggle'
 
-const steps = ['Исходные данные', 'Покупатели и маршруты', 'Сравнение']
+const steps = ['Исходные данные', 'Покупатели и маршруты', 'Результат', 'Маршрутные листы']
 
 export function AppHeader({ onHome }: { onHome: () => void }) {
   const { step, setStep, status } = useApp()
@@ -13,7 +14,7 @@ export function AppHeader({ onHome }: { onHome: () => void }) {
       </button>
       <nav className="stepper" aria-label="Этапы планирования">
         {steps.map((label, index) => {
-          const number = (index + 1) as 1 | 2 | 3
+          const number = (index + 1) as 1 | 2 | 3 | 4
           return (
             <div className={`stepper-item ${number === step ? 'is-current' : ''} ${number < step ? 'is-complete' : ''}`} key={label} aria-current={number === step ? 'step' : undefined}>
               <span>{number}</span><b>{label}</b>
@@ -23,8 +24,9 @@ export function AppHeader({ onHome }: { onHome: () => void }) {
         })}
       </nav>
       <div className="header-actions">
+        <ThemeToggle />
         <ModelAssumptions />
-        {step > 1 && <button className="button button-ghost header-back" disabled={status === 'loading'} onClick={() => setStep((step - 1) as 1 | 2)} aria-label="Вернуться на предыдущий этап">← Назад</button>}
+        {step > 1 && <button className="button button-ghost header-back" disabled={status === 'loading'} onClick={() => setStep((step - 1) as 1 | 2 | 3)} aria-label="Вернуться на предыдущий этап">← Назад</button>}
       </div>
     </header>
   )

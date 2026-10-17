@@ -11,7 +11,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           <svg className="scene-map" viewBox="0 0 600 500" aria-hidden="true"><defs><linearGradient id="field" x2="1" y2="1"><stop stopColor="#f4f7f0"/><stop offset="1" stopColor="#e7f1e7"/></linearGradient></defs><rect x="15" y="25" width="570" height="450" rx="40" fill="url(#field)"/><path d="M35 150 205 65 315 185 565 95M65 380 275 295 510 405" fill="none" stroke="#fff" strokeWidth="22" strokeLinecap="round" opacity=".72"/><path d="M55 430Q285 230 555 410" fill="none" stroke="#d8e9eb" strokeWidth="18" strokeLinecap="round"/><path d="M125 170C205 275 345 135 445 275" fill="none" stroke="#9ac9aa" strokeWidth="4" strokeLinecap="round" opacity=".72"/><g fill="#78b58f" stroke="white" strokeWidth="5"><circle cx="125" cy="170" r="10"/><circle cx="445" cy="275" r="10"/></g></svg>
           <div className="scene-label scene-destination"><span className="scene-dot"/><span><b>Урожай в пути</b><small>От фермы к покупателю</small></span></div>
           <div className="scene-label scene-profit"><span>↗</span><span><small>Цель оптимизации</small><b>Больше прибыли</b></span></div>
-          <div className="scene-truck"><TruckIllustration color="#fbfcf9" /></div>
+          <div className="scene-truck"><TruckIllustration color="#2f5546" /></div>
           <img className="scene-fruit scene-strawberry" src="/mascots/strawberry.png" alt="" aria-hidden="true" />
           <img className="scene-fruit scene-banana" src="/mascots/banana.png" alt="" aria-hidden="true" />
           <img className="scene-fruit scene-blackberry" src="/mascots/blackberry.png" alt="" aria-hidden="true" />

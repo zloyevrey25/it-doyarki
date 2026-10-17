@@ -75,3 +75,20 @@
   height: 38px;
   object-fit: contain;
 }
+
+@media (min-width: 1101px) {
+  .page-comparison > .compact-final-map {
+    position: sticky;
+    top: 82px;
+    grid-column: 2;
+    grid-row: 3 / 6;
+    align-self: start;
+    height: fit-content;
+  }
+
+  body .page-comparison > .compact-final-map .route-map.is-compact {
+    height: 320px;
+    min-height: 320px;
+    max-height: 320px;
+  }
+}
